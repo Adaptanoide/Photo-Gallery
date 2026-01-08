@@ -9,7 +9,213 @@ const { authenticateToken } = require('./auth');
 const router = express.Router();
 const processingLocks = new Map();
 
-// Autenticação obrigatória para todas as rotas
+// ============================================
+// ROTAS PÚBLICAS - SEM AUTENTICAÇÃO
+// Devem vir ANTES do middleware authenticateToken
+// ============================================
+
+// ROTA PÚBLICA - VALIDAR TOKEN E OBTER INFO
+router.get('/public/download/:token', async (req, res) => {
+    try {
+        const { token } = req.params;
+
+        console.log(`📥 Download público solicitado com token: ${token.substring(0, 8)}...`);
+
+        const selection = await Selection.findOne({ downloadToken: token });
+
+        if (!selection) {
+            return res.status(404).json({
+                success: false,
+                message: 'Invalid or expired download link'
+            });
+        }
+
+        const tokenAge = Date.now() - new Date(selection.downloadTokenCreatedAt).getTime();
+        const maxAge = 7 * 24 * 60 * 60 * 1000;
+
+        if (tokenAge > maxAge) {
+            return res.status(410).json({
+                success: false,
+                message: 'Download link has expired. Please request a new one.'
+            });
+        }
+
+        res.json({
+            success: true,
+            selection: {
+                clientName: selection.clientName,
+                totalItems: selection.totalItems,
+                totalValue: selection.totalValue,
+                createdAt: selection.createdAt
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error validating download token:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error processing download request'
+        });
+    }
+});
+
+// ROTA PÚBLICA - DOWNLOAD ZIP
+router.get('/public/download/:token/zip', async (req, res) => {
+    try {
+        const { token } = req.params;
+
+        console.log(`📦 Gerando ZIP para token: ${token.substring(0, 8)}...`);
+
+        const selection = await Selection.findOne({ downloadToken: token });
+
+        if (!selection) {
+            return res.status(404).json({
+                success: false,
+                message: 'Invalid or expired download link'
+            });
+        }
+
+        const tokenAge = Date.now() - new Date(selection.downloadTokenCreatedAt).getTime();
+        const maxAge = 7 * 24 * 60 * 60 * 1000;
+
+        if (tokenAge > maxAge) {
+            return res.status(410).json({
+                success: false,
+                message: 'Download link has expired'
+            });
+        }
+
+        selection.downloadCount = (selection.downloadCount || 0) + 1;
+        await selection.save();
+
+        const JSZip = require('jszip');
+        const zip = new JSZip();
+
+        let successCount = 0;
+        let errorCount = 0;
+
+        console.log(`📸 Processando ${selection.items.length} fotos...`);
+
+        for (let i = 0; i < selection.items.length; i++) {
+            const item = selection.items[i];
+
+            try {
+                let photoUrl;
+                if (item.thumbnailUrl) {
+                    photoUrl = item.thumbnailUrl.replace('/_thumbnails/', '/');
+                } else {
+                    const path = item.originalPath ? item.originalPath.replace(/→/g, '/').trim() : '';
+                    photoUrl = `https://images.sunshinecowhides-gallery.com/${path}/${item.fileName}`;
+                }
+
+                const response = await fetch(photoUrl);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const arrayBuffer = await response.arrayBuffer();
+                const buffer = Buffer.from(arrayBuffer);
+
+                zip.file(item.fileName, buffer);
+                successCount++;
+
+            } catch (error) {
+                console.error(`❌ Error downloading ${item.fileName}:`, error.message);
+                errorCount++;
+            }
+        }
+
+        if (successCount === 0) {
+            return res.status(500).json({
+                success: false,
+                message: 'Failed to download any photos'
+            });
+        }
+
+        console.log(`📦 Gerando ZIP... (${successCount} fotos, ${errorCount} erros)`);
+
+        const zipBuffer = await zip.generateAsync({
+            type: 'nodebuffer',
+            compression: 'DEFLATE',
+            compressionOptions: { level: 6 }
+        });
+
+        const clientName = (selection.clientName || 'client').replace(/[^a-zA-Z0-9]/g, '_');
+        const fileName = `Sunshine_Cowhides_${clientName}_${selection.totalItems}_photos.zip`;
+
+        console.log(`✅ ZIP criado: ${fileName} (${(zipBuffer.length / 1024 / 1024).toFixed(2)} MB)`);
+
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+        res.setHeader('Content-Length', zipBuffer.length);
+
+        res.send(zipBuffer);
+
+    } catch (error) {
+        console.error('❌ Error generating ZIP:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
+// ROTA PÚBLICA - VISUALIZAR FOTOS (GALERIA)
+router.get('/public/view/:token', async (req, res) => {
+    try {
+        const { token } = req.params;
+
+        console.log(`👁️ Visualização pública solicitada com token: ${token.substring(0, 8)}...`);
+
+        const selection = await Selection.findOne({ downloadToken: token });
+
+        if (!selection) {
+            return res.status(404).json({
+                success: false,
+                message: 'Invalid or expired view link'
+            });
+        }
+
+        const tokenAge = Date.now() - new Date(selection.downloadTokenCreatedAt).getTime();
+        const maxAge = 7 * 24 * 60 * 60 * 1000;
+
+        if (tokenAge > maxAge) {
+            return res.status(410).json({
+                success: false,
+                message: 'View link has expired. Please request a new one.'
+            });
+        }
+
+        const photos = selection.items
+            .filter(item => !item.isCatalogProduct)
+            .map(item => ({
+                fileName: item.fileName,
+                thumbnailUrl: item.thumbnailUrl,
+                category: item.category
+            }));
+
+        res.json({
+            success: true,
+            clientName: selection.clientName,
+            totalItems: photos.length,
+            createdAt: selection.createdAt,
+            photos: photos
+        });
+
+    } catch (error) {
+        console.error('❌ Error loading view data:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error loading selection data'
+        });
+    }
+});
+
+// ============================================
+// MIDDLEWARE DE AUTENTICAÇÃO
+// Todas as rotas abaixo requerem autenticação
+// ============================================
 router.use(authenticateToken);
 
 /**
@@ -1558,161 +1764,63 @@ router.post('/:selectionId/send-download-link', async (req, res) => {
 });
 
 // ============================================
-// ROTA PÚBLICA - DOWNLOAD COM TOKEN (SEM AUTH)
+// GERAR TOKEN DE VISUALIZAÇÃO (PARA COPY LINK)
 // ============================================
-router.get('/public/download/:token', async (req, res) => {
+router.post('/:selectionId/generate-view-token', async (req, res) => {
     try {
-        const { token } = req.params;
+        const { selectionId } = req.params;
 
-        console.log(`📥 Download público solicitado com token: ${token.substring(0, 8)}...`);
+        console.log(`🔗 Gerando token de visualização para seleção: ${selectionId}`);
 
-        // 1. Buscar seleção pelo token
-        const selection = await Selection.findOne({ downloadToken: token });
+        // 1. Buscar seleção
+        const selection = await Selection.findOne({ selectionId });
 
         if (!selection) {
             return res.status(404).json({
                 success: false,
-                message: 'Invalid or expired download link'
+                message: 'Selection not found'
             });
         }
 
-        // 2. Verificar se token não expirou (7 dias)
-        const tokenAge = Date.now() - new Date(selection.downloadTokenCreatedAt).getTime();
-        const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 dias em ms
+        // 2. Gerar token se não existir ou se expirou
+        const crypto = require('crypto');
+        const tokenAge = selection.downloadTokenCreatedAt
+            ? Date.now() - new Date(selection.downloadTokenCreatedAt).getTime()
+            : Infinity;
+        const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 dias
 
-        if (tokenAge > maxAge) {
-            return res.status(410).json({
-                success: false,
-                message: 'Download link has expired. Please request a new one.'
-            });
+        if (!selection.downloadToken || tokenAge > maxAge) {
+            selection.downloadToken = crypto.randomBytes(32).toString('hex');
+            selection.downloadTokenCreatedAt = new Date();
+            await selection.save();
+            console.log(`🔑 Novo token gerado para ${selectionId}`);
+        } else {
+            console.log(`♻️ Reutilizando token existente para ${selectionId}`);
         }
 
-        // 3. Retornar informações da seleção (sem gerar ZIP ainda)
+        // 3. Gerar URL de visualização (usa origem da requisição para funcionar em localhost e produção)
+        const protocol = req.get('x-forwarded-proto') || req.protocol || 'https';
+        const host = req.get('host');
+        const baseUrl = `${protocol}://${host}`;
+        const viewLink = `${baseUrl}/selection-viewer.html?token=${selection.downloadToken}`;
+
+        // 4. Contar apenas fotos (não catalog products)
+        const photoCount = selection.items.filter(item => !item.isCatalogProduct).length;
+
         res.json({
             success: true,
-            selection: {
-                clientName: selection.clientName,
-                totalItems: selection.totalItems,
-                totalValue: selection.totalValue,
-                createdAt: selection.createdAt
-            }
+            viewLink: viewLink,
+            clientName: selection.clientName,
+            totalItems: photoCount,
+            expiresAt: new Date(selection.downloadTokenCreatedAt.getTime() + maxAge)
         });
 
     } catch (error) {
-        console.error('❌ Error validating download token:', error);
+        console.error('❌ Error generating view token:', error);
         res.status(500).json({
             success: false,
-            message: 'Error processing download request'
-        });
-    }
-});
-
-// ============================================
-// ROTA PÚBLICA - EXECUTAR DOWNLOAD ZIP (SEM AUTH)
-// ============================================
-router.get('/public/download/:token/zip', async (req, res) => {
-    try {
-        const { token } = req.params;
-
-        console.log(`📦 Gerando ZIP para token: ${token.substring(0, 8)}...`);
-
-        // 1. Buscar seleção pelo token
-        const selection = await Selection.findOne({ downloadToken: token });
-
-        if (!selection) {
-            return res.status(404).json({
-                success: false,
-                message: 'Invalid or expired download link'
-            });
-        }
-
-        // 2. Verificar expiração
-        const tokenAge = Date.now() - new Date(selection.downloadTokenCreatedAt).getTime();
-        const maxAge = 7 * 24 * 60 * 60 * 1000;
-
-        if (tokenAge > maxAge) {
-            return res.status(410).json({
-                success: false,
-                message: 'Download link has expired'
-            });
-        }
-
-        // 3. Incrementar contador de downloads
-        selection.downloadCount = (selection.downloadCount || 0) + 1;
-        await selection.save();
-
-        // 4. Gerar ZIP (mesma lógica do download-zip existente)
-        const JSZip = require('jszip');
-        const zip = new JSZip();
-
-        let successCount = 0;
-        let errorCount = 0;
-
-        console.log(`📸 Processando ${selection.items.length} fotos...`);
-
-        for (let i = 0; i < selection.items.length; i++) {
-            const item = selection.items[i];
-
-            try {
-                let photoUrl;
-                if (item.thumbnailUrl) {
-                    photoUrl = item.thumbnailUrl.replace('/_thumbnails/', '/');
-                } else {
-                    const path = item.originalPath ? item.originalPath.replace(/→/g, '/').trim() : '';
-                    photoUrl = `https://images.sunshinecowhides-gallery.com/${path}/${item.fileName}`;
-                }
-
-                const response = await fetch(photoUrl);
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-
-                const arrayBuffer = await response.arrayBuffer();
-                const buffer = Buffer.from(arrayBuffer);
-
-                zip.file(item.fileName, buffer);
-                successCount++;
-
-            } catch (error) {
-                console.error(`❌ Error downloading ${item.fileName}:`, error.message);
-                errorCount++;
-            }
-        }
-
-        if (successCount === 0) {
-            return res.status(500).json({
-                success: false,
-                message: 'Failed to download any photos'
-            });
-        }
-
-        console.log(`📦 Gerando ZIP... (${successCount} fotos, ${errorCount} erros)`);
-
-        const zipBuffer = await zip.generateAsync({
-            type: 'nodebuffer',
-            compression: 'DEFLATE',
-            compressionOptions: { level: 6 }
-        });
-
-        // Nome do arquivo
-        const clientName = (selection.clientName || 'client').replace(/[^a-zA-Z0-9]/g, '_');
-        const fileName = `Sunshine_Cowhides_${clientName}_${selection.totalItems}_photos.zip`;
-
-        console.log(`✅ ZIP criado: ${fileName} (${(zipBuffer.length / 1024 / 1024).toFixed(2)} MB)`);
-
-        // Enviar arquivo
-        res.setHeader('Content-Type', 'application/zip');
-        res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-        res.setHeader('Content-Length', zipBuffer.length);
-
-        res.send(zipBuffer);
-
-    } catch (error) {
-        console.error('❌ Error generating ZIP:', error);
-        res.status(500).json({
-            success: false,
-            message: error.message
+            message: 'Error generating view token',
+            error: error.message
         });
     }
 });

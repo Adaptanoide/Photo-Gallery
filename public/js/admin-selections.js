@@ -425,6 +425,16 @@ class AdminSelections {
             });
         }
 
+        // COPY VIEW LINK - para PENDING e FINALIZED
+        if (selection.status === 'pending' || selection.status === 'finalized') {
+            actions.push({
+                icon: 'fas fa-link',
+                label: 'Copy View Link',
+                class: 'action-copy-link',
+                onclick: `adminSelections.copyViewLink('${selection.selectionId}')`
+            });
+        }
+
         // PENDING - adiciona Reopen e Cancel
         if (selection.status === 'pending') {
             actions.push({
@@ -829,7 +839,8 @@ class AdminSelections {
 
             grouped[groupKey].items.push(item);
             grouped[groupKey].count += item.quantity || 1;
-            grouped[groupKey].value += (item.price || 0) * (item.quantity || 1);
+            // item.price is already the total (unitPrice × quantity), no need to multiply again
+            grouped[groupKey].value += item.price || 0;
         });
 
         // Ordenar: fotos únicas primeiro, depois catálogo por nome
@@ -3679,6 +3690,153 @@ class AdminSelections {
             console.error('Error sending download link:', error);
             UISystem.showToast('error', `Error: ${error.message}`);
         }
+    }
+
+    // ===== COPY VIEW LINK - Generate and copy link for client to view photos =====
+    async copyViewLink(selectionId) {
+        try {
+            UISystem.showToast('info', 'Generating view link...');
+
+            // Generate token if doesn't exist (reuse send-download-link endpoint logic)
+            const response = await fetch(`/api/selections/${selectionId}/generate-view-token`, {
+                method: 'POST',
+                headers: this.getAuthHeaders()
+            });
+
+            const result = await response.json();
+
+            if (!result.success) {
+                UISystem.showToast('error', result.message || 'Failed to generate link');
+                return;
+            }
+
+            const viewLink = result.viewLink;
+
+            // Show modal with link
+            this.showCopyLinkModal(viewLink, result.clientName, result.totalItems);
+
+        } catch (error) {
+            console.error('Error generating view link:', error);
+            UISystem.showToast('error', `Error: ${error.message}`);
+        }
+    }
+
+    // ===== MODAL TO SHOW AND COPY VIEW LINK =====
+    showCopyLinkModal(link, clientName, totalItems) {
+        const modalId = 'copyLinkModal-' + Date.now();
+        const modal = document.createElement('div');
+        modal.className = 'ui-modal-backdrop';
+        modal.id = modalId;
+        modal.innerHTML = `
+            <div class="ui-modal" style="max-width: 500px;">
+                <div class="ui-modal-header">
+                    <span class="modal-icon"><i class="fas fa-link"></i></span>
+                    <h3>View Link Generated</h3>
+                    <button class="modal-close" id="${modalId}-close">×</button>
+                </div>
+                <div class="ui-modal-body">
+                    <p style="color: #888; margin-bottom: 15px;">Share this link with <strong style="color: #d4af37;">${clientName}</strong> to view their ${totalItems} photos:</p>
+
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input
+                            type="text"
+                            id="${modalId}-link"
+                            value="${link}"
+                            readonly
+                            style="
+                                flex: 1;
+                                padding: 12px;
+                                background: rgba(255,255,255,0.05);
+                                border: 1px solid rgba(212, 175, 55, 0.3);
+                                border-radius: 8px;
+                                color: #fff;
+                                font-size: 13px;
+                                font-family: monospace;
+                            "
+                        />
+                        <button
+                            id="${modalId}-copy"
+                            style="
+                                padding: 12px 20px;
+                                background: linear-gradient(135deg, #d4af37, #b8960c);
+                                border: none;
+                                border-radius: 8px;
+                                color: #000;
+                                font-weight: 600;
+                                cursor: pointer;
+                                display: flex;
+                                align-items: center;
+                                gap: 6px;
+                                transition: all 0.3s ease;
+                            "
+                        >
+                            <i class="fas fa-copy"></i>
+                            Copy
+                        </button>
+                    </div>
+
+                    <p style="color: #666; font-size: 12px; margin-top: 15px;">
+                        <i class="fas fa-info-circle" style="margin-right: 5px;"></i>
+                        Link expires in 7 days. Client can view and download photos.
+                    </p>
+                </div>
+                <div class="ui-modal-footer">
+                    <button class="btn-secondary" id="${modalId}-done">Done</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Event listeners
+        const copyBtn = document.getElementById(`${modalId}-copy`);
+        const linkInput = document.getElementById(`${modalId}-link`);
+        const closeBtn = document.getElementById(`${modalId}-close`);
+        const doneBtn = document.getElementById(`${modalId}-done`);
+
+        const cleanup = () => {
+            if (modal) modal.remove();
+        };
+
+        copyBtn.onclick = async () => {
+            try {
+                await navigator.clipboard.writeText(link);
+                copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                copyBtn.style.background = 'linear-gradient(135deg, #28a745, #1e7b34)';
+                linkInput.select();
+                UISystem.showToast('success', 'Link copied to clipboard!');
+
+                setTimeout(() => {
+                    copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy';
+                    copyBtn.style.background = 'linear-gradient(135deg, #d4af37, #b8960c)';
+                }, 2000);
+            } catch (err) {
+                // Fallback para browsers mais antigos
+                linkInput.select();
+                document.execCommand('copy');
+                UISystem.showToast('success', 'Link copied!');
+            }
+        };
+
+        closeBtn.onclick = cleanup;
+        doneBtn.onclick = cleanup;
+
+        // Click outside to close
+        modal.onclick = (e) => {
+            if (e.target === modal) cleanup();
+        };
+
+        // ESC to close
+        const handleEsc = (e) => {
+            if (e.key === 'Escape') {
+                cleanup();
+                document.removeEventListener('keydown', handleEsc);
+            }
+        };
+        document.addEventListener('keydown', handleEsc);
+
+        // Auto-select link text
+        setTimeout(() => linkInput.select(), 100);
     }
 
     // ===== STYLED CONFIRMATION MODAL FOR DOWNLOAD LINK (UISystem pattern) =====

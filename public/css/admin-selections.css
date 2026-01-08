@@ -1025,6 +1025,13 @@
     color: #3b82f6;
 }
 
+.action-menu-item.action-copy-link:hover {
+    background: rgba(168, 85, 247, 0.1);
+}
+.action-menu-item.action-copy-link i {
+    color: #a855f7;
+}
+
 .action-menu-item.action-reopen:hover {
     background: rgba(59, 130, 246, 0.1);
 }

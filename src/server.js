@@ -118,6 +118,50 @@ app.get('/api/public/download/:token', async (req, res) => {
     }
 });
 
+// Visualizar fotos da seleção (galeria)
+app.get('/api/public/view/:token', async (req, res) => {
+    try {
+        const { token } = req.params;
+
+        console.log(`👁️ Visualização pública solicitada com token: ${token.substring(0, 8)}...`);
+
+        const selection = await Selection.findOne({ downloadToken: token });
+
+        if (!selection) {
+            return res.status(404).json({ success: false, message: 'Invalid or expired view link' });
+        }
+
+        // Verificar expiração (7 dias)
+        const tokenAge = Date.now() - new Date(selection.downloadTokenCreatedAt).getTime();
+        const maxAge = 7 * 24 * 60 * 60 * 1000;
+
+        if (tokenAge > maxAge) {
+            return res.status(410).json({ success: false, message: 'View link has expired. Please request a new one.' });
+        }
+
+        // Preparar dados das fotos (apenas fotos únicas, não catalog products)
+        const photos = selection.items
+            .filter(item => !item.isCatalogProduct)
+            .map(item => ({
+                fileName: item.fileName,
+                thumbnailUrl: item.thumbnailUrl,
+                category: item.category
+            }));
+
+        res.json({
+            success: true,
+            clientName: selection.clientName,
+            totalItems: photos.length,
+            createdAt: selection.createdAt,
+            photos: photos
+        });
+
+    } catch (error) {
+        console.error('❌ Error loading view data:', error);
+        res.status(500).json({ success: false, message: 'Error loading selection data' });
+    }
+});
+
 // Gerar ZIP para download
 app.get('/api/public/download/:token/zip', async (req, res) => {
     try {

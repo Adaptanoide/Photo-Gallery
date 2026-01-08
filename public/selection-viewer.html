@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Your Selection - Sunshine Cowhides</title>
+    <link rel="icon" type="image/x-icon" href="/images/favicon/favicon.ico">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a0a;
+            min-height: 100vh;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.7) 70%, transparent 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 100;
+            transition: opacity 0.3s ease;
+        }
+
+        .header.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-logo {
+            height: 40px;
+        }
+
+        .header-info {
+            color: #ccc;
+            font-size: 14px;
+        }
+
+        .header-info .client-name {
+            color: #D4AF37;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .photo-counter {
+            background: rgba(255,255,255,0.1);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            color: #D4AF37;
+            font-weight: 600;
+        }
+
+        .btn-download-all {
+            background: linear-gradient(135deg, #D4AF37, #b8960c);
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 25px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-download-all:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 20px rgba(212, 175, 55, 0.4);
+        }
+
+        .btn-download-all:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Gallery Container */
+        .gallery-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #0a0a0a;
+        }
+
+        /* Main Image */
+        .main-image-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .main-image {
+            max-width: 90%;
+            max-height: 85vh;
+            object-fit: contain;
+            transition: opacity 0.3s ease;
+        }
+
+        .main-image.loading {
+            opacity: 0.3;
+        }
+
+        /* Navigation Arrows */
+        .nav-arrow {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 60px;
+            height: 60px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(212, 175, 55, 0.5);
+            border-radius: 50%;
+            color: #D4AF37;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 50;
+        }
+
+        .nav-arrow:hover {
+            background: rgba(212, 175, 55, 0.2);
+            border-color: #D4AF37;
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .nav-arrow.prev {
+            left: 20px;
+        }
+
+        .nav-arrow.next {
+            right: 20px;
+        }
+
+        /* Zoom Controls */
+        .zoom-controls {
+            position: fixed;
+            bottom: 120px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 95;
+            transition: opacity 0.3s ease;
+        }
+
+        .zoom-controls.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .zoom-btn {
+            width: 44px;
+            height: 44px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid rgba(212, 175, 55, 0.5);
+            border-radius: 50%;
+            color: #D4AF37;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .zoom-btn:hover {
+            background: rgba(212, 175, 55, 0.2);
+            border-color: #D4AF37;
+            transform: scale(1.1);
+        }
+
+        .zoom-btn:active {
+            transform: scale(0.95);
+        }
+
+        .zoom-btn.reset {
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .zoom-level {
+            text-align: center;
+            color: #D4AF37;
+            font-size: 11px;
+            font-weight: 600;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 4px 8px;
+            border-radius: 10px;
+        }
+
+        /* Zoomable Image Container */
+        .main-image-container {
+            overflow: hidden;
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .main-image {
+            max-width: 90%;
+            max-height: 85vh;
+            object-fit: contain;
+            transition: transform 0.2s ease;
+            transform-origin: center center;
+        }
+
+        .main-image.dragging {
+            cursor: grabbing;
+            transition: none;
+        }
+
+        .main-image.zoomed {
+            cursor: grab;
+        }
+
+        /* Thumbnails Strip */
+        .thumbnails-strip {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100px;
+            background: linear-gradient(0deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.8) 70%, transparent 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 15px 60px;
+            overflow-x: auto;
+            z-index: 100;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .thumbnails-strip.hidden {
+            transform: translateY(100%);
+            opacity: 0;
+        }
+
+        .thumbnails-strip::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .thumbnails-strip::-webkit-scrollbar-thumb {
+            background: #D4AF37;
+            border-radius: 2px;
+        }
+
+        .thumbnail {
+            width: 70px;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 6px;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            flex-shrink: 0;
+        }
+
+        .thumbnail:hover {
+            opacity: 0.8;
+            transform: scale(1.05);
+        }
+
+        .thumbnail.active {
+            opacity: 1;
+            border-color: #D4AF37;
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+        }
+
+        /* Loading State */
+        .loading-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            gap: 20px;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(212, 175, 55, 0.2);
+            border-top-color: #D4AF37;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #888;
+            font-size: 16px;
+        }
+
+        /* Error State */
+        .error-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            gap: 20px;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .error-state i {
+            font-size: 60px;
+            color: #dc3545;
+        }
+
+        .error-state h2 {
+            color: #fff;
+            font-size: 24px;
+        }
+
+        .error-state p {
+            color: #888;
+            font-size: 16px;
+            max-width: 400px;
+        }
+
+        /* Zoom Modal */
+        .zoom-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.98);
+            z-index: 200;
+            cursor: zoom-out;
+            overflow: auto;
+        }
+
+        .zoom-modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .zoom-modal img {
+            max-width: none;
+            max-height: none;
+            cursor: grab;
+        }
+
+        .zoom-close {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #D4AF37;
+            border-radius: 50%;
+            color: #D4AF37;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 201;
+        }
+
+        /* Progress Toast */
+        .progress-toast {
+            position: fixed;
+            bottom: 130px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #D4AF37;
+            border-radius: 10px;
+            padding: 15px 25px;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 150;
+            min-width: 300px;
+        }
+
+        .progress-toast.active {
+            display: flex;
+        }
+
+        .progress-toast .progress-text {
+            color: #fff;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .progress-toast .progress-bar {
+            height: 6px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-toast .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #D4AF37, #f0d060);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .header {
+                height: 60px;
+                padding: 0 15px;
+            }
+
+            .header-logo {
+                height: 30px;
+            }
+
+            .header-info {
+                display: none;
+            }
+
+            .nav-arrow {
+                width: 45px;
+                height: 45px;
+                font-size: 18px;
+            }
+
+            .nav-arrow.prev {
+                left: 10px;
+            }
+
+            .nav-arrow.next {
+                right: 10px;
+            }
+
+            .thumbnails-strip {
+                height: 80px;
+                padding: 10px 15px;
+            }
+
+            .thumbnail {
+                width: 55px;
+                height: 55px;
+            }
+
+            .btn-download-all span {
+                display: none;
+            }
+
+            .btn-download-all {
+                padding: 10px 15px;
+            }
+        }
+
+        /* Touch hint for mobile */
+        .touch-hint {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px 30px;
+            border-radius: 10px;
+            color: #fff;
+            text-align: center;
+            z-index: 60;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+        }
+
+        .touch-hint.show {
+            opacity: 1;
+        }
+
+        .touch-hint i {
+            font-size: 30px;
+            color: #D4AF37;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        /* Photo Info Overlay */
+        .photo-info {
+            position: fixed;
+            bottom: 110px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.85);
+            border: 1px solid rgba(212, 175, 55, 0.4);
+            border-radius: 12px;
+            padding: 12px 24px;
+            text-align: center;
+            z-index: 90;
+            backdrop-filter: blur(10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .photo-info.hidden {
+            opacity: 0;
+            transform: translateX(-50%) translateY(20px);
+        }
+
+        .photo-info .photo-number {
+            font-size: 28px;
+            font-weight: 700;
+            color: #D4AF37;
+            letter-spacing: 1px;
+        }
+
+        /* Thumbnail with number badge */
+        .thumbnail-wrapper {
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .thumbnail-number {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: #D4AF37;
+            color: #000;
+            font-size: 10px;
+            font-weight: 700;
+            min-width: 20px;
+            height: 20px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 5px;
+            z-index: 10;
+        }
+
+        /* Mobile Improvements */
+        @media (max-width: 768px) {
+            .photo-info {
+                bottom: 90px;
+                padding: 10px 18px;
+                max-width: 90%;
+            }
+
+            .photo-info .photo-number {
+                font-size: 22px;
+            }
+
+            .main-image {
+                max-width: 95%;
+                max-height: 70vh;
+            }
+
+            .nav-arrow {
+                opacity: 0.7;
+            }
+
+            .thumbnail-number {
+                font-size: 9px;
+                min-width: 18px;
+                height: 18px;
+            }
+
+            .zoom-controls {
+                bottom: 100px;
+                right: 10px;
+            }
+
+            .zoom-btn {
+                width: 38px;
+                height: 38px;
+                font-size: 16px;
+            }
+
+            .zoom-level {
+                font-size: 10px;
+            }
+        }
+
+        /* Very small screens */
+        @media (max-width: 480px) {
+            .header {
+                height: 55px;
+                padding: 0 10px;
+            }
+
+            .photo-counter {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+
+            .btn-download-all {
+                padding: 8px 12px;
+            }
+
+            .photo-info {
+                bottom: 85px;
+                padding: 8px 14px;
+            }
+
+            .photo-info .photo-number {
+                font-size: 18px;
+            }
+
+            .thumbnails-strip {
+                height: 70px;
+                gap: 6px;
+            }
+
+            .thumbnail {
+                width: 48px;
+                height: 48px;
+            }
+
+            .nav-arrow {
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+            }
+
+            .nav-arrow.prev {
+                left: 5px;
+            }
+
+            .nav-arrow.next {
+                right: 5px;
+            }
+
+            .zoom-controls {
+                bottom: 85px;
+                right: 8px;
+                gap: 6px;
+            }
+
+            .zoom-btn {
+                width: 34px;
+                height: 34px;
+                font-size: 14px;
+            }
+
+            .zoom-btn.reset {
+                font-size: 10px;
+            }
+
+            .zoom-level {
+                font-size: 9px;
+                padding: 3px 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading State -->
+    <div id="loadingState" class="loading-state">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">Loading your selection...</p>
+    </div>
+
+    <!-- Error State -->
+    <div id="errorState" class="error-state" style="display: none;">
+        <i class="fas fa-exclamation-circle"></i>
+        <h2>Oops!</h2>
+        <p id="errorMessage">Something went wrong.</p>
+    </div>
+
+    <!-- Main Gallery -->
+    <div id="galleryState" style="display: none;">
+        <!-- Header -->
+        <div class="header" id="header">
+            <div class="header-left">
+                <img src="https://images.sunshinecowhides-gallery.com/_assets/logo-transparent.png" alt="Sunshine Cowhides" class="header-logo" onerror="this.style.display='none'">
+                <div class="header-info">
+                    <div class="client-name" id="clientName">-</div>
+                    <div>Your Selected Photos</div>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="photo-counter">
+                    <span id="currentIndex">1</span> / <span id="totalPhotos">0</span>
+                </div>
+                <button class="btn-download-all" id="btnDownloadAll" onclick="downloadAllPhotos()">
+                    <i class="fas fa-download"></i>
+                    <span>Download All</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Gallery Container -->
+        <div class="gallery-container" id="galleryContainer">
+            <div class="main-image-container">
+                <img src="" alt="Selected Photo" class="main-image" id="mainImage">
+            </div>
+
+            <!-- Navigation Arrows -->
+            <button class="nav-arrow prev" onclick="prevPhoto()">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <button class="nav-arrow next" onclick="nextPhoto()">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+
+            <!-- Zoom Controls -->
+            <div class="zoom-controls" id="zoomControls">
+                <button class="zoom-btn" onclick="zoomIn()" title="Zoom In">
+                    <i class="fas fa-plus"></i>
+                </button>
+                <div class="zoom-level" id="zoomLevel">100%</div>
+                <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button class="zoom-btn reset" onclick="zoomReset()" title="Reset Zoom">
+                    <i class="fas fa-expand"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Thumbnails Strip -->
+        <div class="thumbnails-strip" id="thumbnailsStrip">
+            <!-- Thumbnails will be generated here -->
+        </div>
+
+        <!-- Touch Hint -->
+        <div class="touch-hint" id="touchHint">
+            <i class="fas fa-hand-pointer"></i>
+            Swipe left or right to navigate
+        </div>
+
+        <!-- Photo Info Overlay -->
+        <div class="photo-info" id="photoInfo">
+            <div class="photo-number" id="photoNumber">#00000</div>
+        </div>
+    </div>
+
+    <!-- Zoom Modal -->
+    <div class="zoom-modal" id="zoomModal" onclick="closeZoom(event)">
+        <button class="zoom-close" onclick="closeZoom(event)">
+            <i class="fas fa-times"></i>
+        </button>
+        <img src="" alt="Zoomed Photo" id="zoomImage">
+    </div>
+
+    <!-- Progress Toast -->
+    <div class="progress-toast" id="progressToast">
+        <div class="progress-text" id="progressText">Preparing download...</div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let photos = [];
+        let currentIndex = 0;
+        let downloadToken = null;
+        let touchStartX = 0;
+        let touchEndX = 0;
+        let isZoomed = false;
+
+        // Zoom state
+        let currentZoom = 1;
+        const minZoom = 1;
+        const maxZoom = 4;
+        const zoomStep = 0.5;
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let translateX = 0;
+        let translateY = 0;
+
+        // Get token from URL
+        function getTokenFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('token');
+        }
+
+        // Show state
+        function showState(stateId) {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('errorState').style.display = 'none';
+            document.getElementById('galleryState').style.display = 'none';
+
+            document.getElementById(stateId).style.display = stateId === 'loadingState' ? 'flex' :
+                                                              stateId === 'errorState' ? 'flex' : 'block';
+        }
+
+        // Show error
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+            showState('errorState');
+        }
+
+        // Initialize
+        async function init() {
+            downloadToken = getTokenFromUrl();
+
+            if (!downloadToken) {
+                showError('Invalid link. No token provided.');
+                return;
+            }
+
+            try {
+                // Fetch selection data with photos
+                const response = await fetch(`/api/public/view/${downloadToken}`);
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    showError(data.message || 'Invalid or expired link.');
+                    return;
+                }
+
+                // Store data
+                photos = data.photos || [];
+
+                if (photos.length === 0) {
+                    showError('No photos found in this selection.');
+                    return;
+                }
+
+                // Update UI
+                document.getElementById('clientName').textContent = data.clientName || 'Your Selection';
+                document.getElementById('totalPhotos').textContent = photos.length;
+
+                // Generate thumbnails
+                generateThumbnails();
+
+                // Show gallery
+                showState('galleryState');
+
+                // Initialize drag support for zoomed images
+                initDragSupport();
+
+                // Load first photo
+                loadPhoto(0);
+
+                // Show touch hint on mobile
+                if ('ontouchstart' in window) {
+                    setTimeout(() => {
+                        document.getElementById('touchHint').classList.add('show');
+                        setTimeout(() => {
+                            document.getElementById('touchHint').classList.remove('show');
+                        }, 3000);
+                    }, 1000);
+                }
+
+            } catch (error) {
+                console.error('Error loading selection:', error);
+                showError('Could not connect to server. Please try again later.');
+            }
+        }
+
+        // Generate thumbnails
+        function generateThumbnails() {
+            const strip = document.getElementById('thumbnailsStrip');
+            strip.innerHTML = '';
+
+            photos.forEach((photo, index) => {
+                // Create wrapper for thumbnail + number badge
+                const wrapper = document.createElement('div');
+                wrapper.className = 'thumbnail-wrapper';
+
+                // Create thumbnail image
+                const img = document.createElement('img');
+                img.className = 'thumbnail' + (index === 0 ? ' active' : '');
+                img.src = photo.thumbnailUrl;
+                img.alt = photo.fileName;
+                img.onclick = () => loadPhoto(index);
+                img.onerror = () => {
+                    img.src = '/images/placeholder.png';
+                };
+
+                // Create number badge - extract number from filename
+                const photoNum = extractPhotoNumber(photo.fileName);
+                const badge = document.createElement('div');
+                badge.className = 'thumbnail-number';
+                badge.textContent = photoNum;
+
+                wrapper.appendChild(img);
+                wrapper.appendChild(badge);
+                strip.appendChild(wrapper);
+            });
+        }
+
+        // Extract photo number from filename (e.g., "20419.webp" -> "20419")
+        function extractPhotoNumber(fileName) {
+            const match = fileName.match(/(\d+)/);
+            return match ? match[1] : '?';
+        }
+
+        // Load photo
+        function loadPhoto(index) {
+            if (index < 0 || index >= photos.length) return;
+
+            currentIndex = index;
+            const photo = photos[index];
+
+            // Reset zoom when changing photos
+            currentZoom = 1;
+            translateX = 0;
+            translateY = 0;
+            applyZoom();
+
+            // Update main image
+            const mainImage = document.getElementById('mainImage');
+            mainImage.classList.add('loading');
+
+            // Build full image URL (original, not thumbnail)
+            const fullUrl = photo.thumbnailUrl.replace('/_thumbnails/', '/');
+
+            mainImage.onload = () => {
+                mainImage.classList.remove('loading');
+            };
+            mainImage.src = fullUrl;
+
+            // Update counter
+            document.getElementById('currentIndex').textContent = index + 1;
+
+            // Update photo info overlay
+            const photoNum = extractPhotoNumber(photo.fileName);
+            document.getElementById('photoNumber').textContent = `#${photoNum}`;
+
+            // Update active thumbnail
+            const thumbnails = document.querySelectorAll('.thumbnail');
+            thumbnails.forEach((thumb, i) => {
+                thumb.classList.toggle('active', i === index);
+            });
+
+            // Scroll thumbnail into view
+            const activeThumbnail = thumbnails[index];
+            if (activeThumbnail) {
+                activeThumbnail.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }
+        }
+
+        // Navigation
+        function prevPhoto() {
+            loadPhoto(currentIndex > 0 ? currentIndex - 1 : photos.length - 1);
+        }
+
+        function nextPhoto() {
+            loadPhoto(currentIndex < photos.length - 1 ? currentIndex + 1 : 0);
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (isZoomed) {
+                if (e.key === 'Escape') closeZoom();
+                return;
+            }
+
+            switch (e.key) {
+                case 'ArrowLeft':
+                    if (currentZoom <= 1) prevPhoto();
+                    break;
+                case 'ArrowRight':
+                    if (currentZoom <= 1) nextPhoto();
+                    break;
+                case '+':
+                case '=':
+                    zoomIn();
+                    break;
+                case '-':
+                case '_':
+                    zoomOut();
+                    break;
+                case '0':
+                    zoomReset();
+                    break;
+                case 'Escape':
+                    if (currentZoom > 1) {
+                        zoomReset();
+                    }
+                    break;
+            }
+        });
+
+        // Touch/Swipe support
+        document.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+
+        document.addEventListener('touchend', (e) => {
+            // Don't navigate if zoomed or dragging
+            if (isZoomed || currentZoom > 1 || isDragging) return;
+
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }, { passive: true });
+
+        function handleSwipe() {
+            // Don't swipe if zoomed
+            if (currentZoom > 1) return;
+
+            const swipeThreshold = 50;
+            const diff = touchStartX - touchEndX;
+
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0) {
+                    nextPhoto();
+                } else {
+                    prevPhoto();
+                }
+            }
+        }
+
+        // Zoom functions
+        function zoomIn() {
+            if (currentZoom < maxZoom) {
+                currentZoom = Math.min(currentZoom + zoomStep, maxZoom);
+                applyZoom();
+            }
+        }
+
+        function zoomOut() {
+            if (currentZoom > minZoom) {
+                currentZoom = Math.max(currentZoom - zoomStep, minZoom);
+                // Reset position when zooming out to minimum
+                if (currentZoom === minZoom) {
+                    translateX = 0;
+                    translateY = 0;
+                }
+                applyZoom();
+            }
+        }
+
+        function zoomReset() {
+            currentZoom = 1;
+            translateX = 0;
+            translateY = 0;
+            applyZoom();
+        }
+
+        function applyZoom() {
+            const mainImage = document.getElementById('mainImage');
+            const zoomLevelDisplay = document.getElementById('zoomLevel');
+
+            // Apply transform
+            mainImage.style.transform = `scale(${currentZoom}) translate(${translateX}px, ${translateY}px)`;
+
+            // Update zoom level display
+            zoomLevelDisplay.textContent = Math.round(currentZoom * 100) + '%';
+
+            // Update cursor and class
+            if (currentZoom > 1) {
+                mainImage.classList.add('zoomed');
+            } else {
+                mainImage.classList.remove('zoomed');
+            }
+        }
+
+        // Drag/Pan support when zoomed
+        function initDragSupport() {
+            const mainImage = document.getElementById('mainImage');
+            const container = document.querySelector('.main-image-container');
+
+            // Mouse drag
+            mainImage.addEventListener('mousedown', startDrag);
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', endDrag);
+
+            // Touch drag
+            mainImage.addEventListener('touchstart', startDragTouch, { passive: false });
+            document.addEventListener('touchmove', dragTouch, { passive: false });
+            document.addEventListener('touchend', endDrag);
+
+            // Mouse wheel zoom
+            container.addEventListener('wheel', handleWheel, { passive: false });
+        }
+
+        function startDrag(e) {
+            if (currentZoom <= 1) return;
+            e.preventDefault();
+            isDragging = true;
+            dragStartX = e.clientX - translateX * currentZoom;
+            dragStartY = e.clientY - translateY * currentZoom;
+            document.getElementById('mainImage').classList.add('dragging');
+        }
+
+        function startDragTouch(e) {
+            if (currentZoom <= 1) return;
+            if (e.touches.length === 1) {
+                e.preventDefault();
+                isDragging = true;
+                dragStartX = e.touches[0].clientX - translateX * currentZoom;
+                dragStartY = e.touches[0].clientY - translateY * currentZoom;
+                document.getElementById('mainImage').classList.add('dragging');
+            }
+        }
+
+        function drag(e) {
+            if (!isDragging || currentZoom <= 1) return;
+            e.preventDefault();
+
+            const newTranslateX = (e.clientX - dragStartX) / currentZoom;
+            const newTranslateY = (e.clientY - dragStartY) / currentZoom;
+
+            // Limit drag range
+            const maxTranslate = (currentZoom - 1) * 150;
+            translateX = Math.max(-maxTranslate, Math.min(maxTranslate, newTranslateX));
+            translateY = Math.max(-maxTranslate, Math.min(maxTranslate, newTranslateY));
+
+            applyZoom();
+        }
+
+        function dragTouch(e) {
+            if (!isDragging || currentZoom <= 1 || e.touches.length !== 1) return;
+            e.preventDefault();
+
+            const newTranslateX = (e.touches[0].clientX - dragStartX) / currentZoom;
+            const newTranslateY = (e.touches[0].clientY - dragStartY) / currentZoom;
+
+            // Limit drag range
+            const maxTranslate = (currentZoom - 1) * 150;
+            translateX = Math.max(-maxTranslate, Math.min(maxTranslate, newTranslateX));
+            translateY = Math.max(-maxTranslate, Math.min(maxTranslate, newTranslateY));
+
+            applyZoom();
+        }
+
+        function endDrag() {
+            isDragging = false;
+            document.getElementById('mainImage').classList.remove('dragging');
+        }
+
+        function handleWheel(e) {
+            e.preventDefault();
+
+            if (e.deltaY < 0) {
+                zoomIn();
+            } else {
+                zoomOut();
+            }
+        }
+
+        // Legacy zoom modal functions (kept for compatibility)
+        function openZoom() {
+            const zoomModal = document.getElementById('zoomModal');
+            const zoomImage = document.getElementById('zoomImage');
+            const mainImage = document.getElementById('mainImage');
+
+            zoomImage.src = mainImage.src;
+            zoomModal.classList.add('active');
+            isZoomed = true;
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeZoom(event) {
+            if (event && event.target.tagName === 'IMG') return;
+
+            const zoomModal = document.getElementById('zoomModal');
+            zoomModal.classList.remove('active');
+            isZoomed = false;
+            document.body.style.overflow = '';
+        }
+
+        // Download all photos
+        async function downloadAllPhotos() {
+            const btn = document.getElementById('btnDownloadAll');
+            const progressToast = document.getElementById('progressToast');
+            const progressText = document.getElementById('progressText');
+            const progressFill = document.getElementById('progressFill');
+
+            // Disable button
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Preparing...</span>';
+
+            // Show progress
+            progressToast.classList.add('active');
+            progressText.textContent = 'Preparing your photos...';
+            progressFill.style.width = '0%';
+
+            // Simulate progress
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress > 90) progress = 90;
+                progressFill.style.width = progress + '%';
+                progressText.textContent = `Preparing... ${Math.round(progress)}%`;
+            }, 500);
+
+            try {
+                const response = await fetch(`/api/public/download/${downloadToken}/zip`);
+
+                clearInterval(progressInterval);
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Download failed');
+                }
+
+                // Complete progress
+                progressFill.style.width = '100%';
+                progressText.textContent = 'Download starting...';
+
+                // Download file
+                const blob = await response.blob();
+
+                // Extract filename
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let fileName = 'Sunshine_Cowhides_Photos.zip';
+                if (contentDisposition) {
+                    const match = contentDisposition.match(/filename="(.+)"/);
+                    if (match) fileName = match[1];
+                }
+
+                // Create download link
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                // Hide progress after delay
+                setTimeout(() => {
+                    progressToast.classList.remove('active');
+                }, 2000);
+
+            } catch (error) {
+                clearInterval(progressInterval);
+                console.error('Download error:', error);
+                progressText.textContent = 'Download failed. Please try again.';
+                progressFill.style.width = '0%';
+
+                setTimeout(() => {
+                    progressToast.classList.remove('active');
+                }, 3000);
+            }
+
+            // Re-enable button
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-download"></i> <span>Download All</span>';
+        }
+
+        // Auto-hide header, thumbnails, photo info, and zoom controls on inactivity
+        let hideTimeout;
+        function resetHideTimeout() {
+            const header = document.getElementById('header');
+            const thumbnails = document.getElementById('thumbnailsStrip');
+            const photoInfo = document.getElementById('photoInfo');
+            const zoomControls = document.getElementById('zoomControls');
+
+            header.classList.remove('hidden');
+            thumbnails.classList.remove('hidden');
+            if (photoInfo) photoInfo.classList.remove('hidden');
+            if (zoomControls) zoomControls.classList.remove('hidden');
+
+            clearTimeout(hideTimeout);
+            hideTimeout = setTimeout(() => {
+                if (!isZoomed && currentZoom <= 1) {
+                    header.classList.add('hidden');
+                    thumbnails.classList.add('hidden');
+                    if (photoInfo) photoInfo.classList.add('hidden');
+                    if (zoomControls) zoomControls.classList.add('hidden');
+                }
+            }, 5000);
+        }
+
+        document.addEventListener('mousemove', resetHideTimeout);
+        document.addEventListener('touchstart', resetHideTimeout);
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
