@@ -349,6 +349,11 @@ class CDEIncrementalSync {
             }
 
             // ============================================
+            // VERIFICAR CARRINHOS ATIVOS
+            // ============================================
+            const cartCheckResult = await this.verificarCarrinhosAtivos(cdeConnection);
+
+            // ============================================
             // VERIFICAR SELEÇÕES PENDING
             // ============================================
             const selectionCheckResult = await this.verificarSelecoesPending(cdeConnection);
@@ -640,6 +645,11 @@ class CDEIncrementalSync {
             this.stats.totalChecked = checkedCount;
             this.stats.discrepanciesFound = discrepancies.length;
             this.stats.lastRun = new Date();
+
+            // ============================================
+            // VERIFICAR CARRINHOS ATIVOS
+            // ============================================
+            const cartCheckResult = await this.verificarCarrinhosAtivos(cdeConnection);
 
             // ============================================
             // VERIFICAR SELEÇÕES PENDING
@@ -1006,6 +1016,161 @@ class CDEIncrementalSync {
                 errosRecalculo: 1,
                 error: error.message
             };
+        }
+    }
+
+    // ============================================
+    // VERIFICAR CARRINHOS ATIVOS vs CDE
+    // ============================================
+    async verificarCarrinhosAtivos(cdeConnection) {
+        console.log(`============================================================`);
+        console.log(`[SYNC] 🛒 VERIFICANDO CARRINHOS ATIVOS`);
+        console.log(`============================================================`);
+
+        try {
+            // Buscar todos os carrinhos ativos
+            const carrinhosAtivos = await Cart.find({ isActive: true });
+
+            if (carrinhosAtivos.length === 0) {
+                console.log(`[SYNC] ✅ Nenhum carrinho ativo encontrado`);
+                return { verificados: 0, problemas: 0, ghostsMarkados: 0 };
+            }
+
+            console.log(`[SYNC] 📋 Encontrados ${carrinhosAtivos.length} carrinhos ativos`);
+
+            let totalProblemas = 0;
+            let totalGhostsMarkados = 0;
+            const carrinhosComProblemas = [];
+
+            for (const carrinho of carrinhosAtivos) {
+                const clientCode = carrinho.clientCode;
+                const clientName = carrinho.clientName;
+
+                // Filtrar apenas fotos únicas (não produtos de catálogo)
+                const photoItems = carrinho.items.filter(item =>
+                    !item.isCatalogProduct &&
+                    item.fileName &&
+                    item.ghostStatus !== 'ghost' // Ignorar já marcados como ghost
+                );
+
+                if (photoItems.length === 0) continue;
+
+                console.log(`[SYNC] 🛒 Verificando carrinho: ${clientName} (${clientCode}) - ${photoItems.length} fotos`);
+
+                const problemasDesteCarrinho = [];
+
+                for (const item of photoItems) {
+                    const fileName = item.fileName || '';
+                    const photoNumber = fileName.match(/(\d+)/)?.[1];
+
+                    if (!photoNumber) continue;
+
+                    // Consultar estado no CDE
+                    const [rows] = await cdeConnection.execute(
+                        'SELECT AESTADOP, RESERVEDUSU, AIDH FROM tbinventario WHERE ATIPOETIQUETA = ? ORDER BY AFECHA DESC',
+                        [photoNumber.padStart(5, '0')]
+                    );
+
+                    if (rows.length === 0) continue;
+
+                    const cdeRecord = rows[0];
+                    const estadoCDE = cdeRecord.AESTADOP;
+                    const reservedUsu = cdeRecord.RESERVEDUSU || '';
+
+                    // Verificar se RESERVEDUSU contém o código do cliente
+                    const pertenceAoCliente = reservedUsu.includes(`-${clientCode}`) ||
+                                              reservedUsu.includes(`_${clientCode}`) ||
+                                              reservedUsu.includes(clientCode);
+
+                    // LÓGICA: Se não está PRE-SELECTED para este cliente, há problema
+                    let problema = null;
+                    let ghostReason = null;
+
+                    if (estadoCDE === 'RETIRADO') {
+                        problema = 'VENDIDA';
+                        ghostReason = 'This item has been sold';
+                    } else if (estadoCDE === 'RESERVED' && !pertenceAoCliente) {
+                        problema = 'RESERVADA POR OUTRO';
+                        ghostReason = 'This item was reserved by another customer';
+                    } else if (estadoCDE === 'STANDBY') {
+                        problema = 'EM STANDBY';
+                        ghostReason = 'This item is temporarily unavailable';
+                    } else if (estadoCDE === 'CONFIRMED' && !pertenceAoCliente) {
+                        problema = 'CONFIRMADA POR OUTRO';
+                        ghostReason = 'This item was confirmed by another customer';
+                    } else if (estadoCDE === 'INGRESADO') {
+                        // Foto está disponível no CDE mas deveria estar PRE-SELECTED
+                        // Isso pode acontecer se alguém liberou manualmente
+                        problema = 'LIBERADA NO CDE';
+                        ghostReason = 'This item is no longer reserved for you';
+                    }
+
+                    if (problema && ghostReason) {
+                        console.log(`[SYNC] ⚠️ Carrinho ${clientCode}: Foto ${photoNumber} - ${problema} (CDE: ${estadoCDE})`);
+
+                        // Marcar como ghost
+                        const CartService = require('../services/CartService');
+                        const marked = await CartService.markItemAsGhost(
+                            clientCode,
+                            fileName,
+                            ghostReason
+                        );
+
+                        if (marked) {
+                            console.log(`[SYNC] 👻 Foto ${photoNumber} marcada como ghost no carrinho de ${clientName}`);
+                            totalGhostsMarkados++;
+                        }
+
+                        problemasDesteCarrinho.push({
+                            foto: photoNumber,
+                            fileName: fileName,
+                            problema,
+                            estadoCDE,
+                            reservedUsu: reservedUsu || '(vazio)',
+                            ghostMarked: marked
+                        });
+                    }
+                }
+
+                if (problemasDesteCarrinho.length > 0) {
+                    totalProblemas += problemasDesteCarrinho.length;
+                    carrinhosComProblemas.push({
+                        clientName,
+                        clientCode,
+                        problemas: problemasDesteCarrinho.length,
+                        detalhes: problemasDesteCarrinho
+                    });
+                }
+            }
+
+            // RESUMO
+            console.log(`------------------------------------------------------------`);
+            console.log(`[SYNC] 📊 RESUMO DA VERIFICAÇÃO DE CARRINHOS:`);
+            console.log(`   Carrinhos verificados: ${carrinhosAtivos.length}`);
+            console.log(`   Total de problemas: ${totalProblemas}`);
+            console.log(`   Ghosts marcados: ${totalGhostsMarkados}`);
+
+            if (carrinhosComProblemas.length > 0) {
+                console.log(`[SYNC] ⚠️ CARRINHOS COM PROBLEMAS:`);
+                carrinhosComProblemas.forEach(c => {
+                    console.log(`   - ${c.clientName} (${c.clientCode}): ${c.problemas} fotos problemáticas`);
+                    c.detalhes.forEach(d => {
+                        console.log(`      • ${d.foto}: ${d.problema} | CDE: ${d.estadoCDE}`);
+                    });
+                });
+            }
+            console.log(`------------------------------------------------------------`);
+
+            return {
+                verificados: carrinhosAtivos.length,
+                problemas: totalProblemas,
+                ghostsMarkados: totalGhostsMarkados,
+                carrinhosAfetados: carrinhosComProblemas
+            };
+
+        } catch (error) {
+            console.error(`[SYNC] ❌ Erro ao verificar carrinhos:`, error.message);
+            return { verificados: 0, problemas: 0, ghostsMarkados: 0, erro: error.message };
         }
     }
 
