@@ -1106,7 +1106,8 @@ class CDEIncrementalSync {
                                               reservedUsu.includes(`_${clientCode}`) ||
                                               reservedUsu.includes(clientCode);
 
-                    // LÓGICA: Se não está PRE-SELECTED para este cliente, há problema
+                    // LÓGICA: Verificar se há problema REAL com a foto
+                    // NÃO remover fotos INGRESADO (disponíveis) - é normal no carrinho!
                     let problema = null;
 
                     if (estadoCDE === 'RETIRADO') {
@@ -1117,11 +1118,9 @@ class CDEIncrementalSync {
                         problema = 'EM STANDBY';
                     } else if (estadoCDE === 'CONFIRMED' && !pertenceAoCliente) {
                         problema = 'CONFIRMADA POR OUTRO';
-                    } else if (estadoCDE === 'INGRESADO') {
-                        // Foto está disponível no CDE mas deveria estar PRE-SELECTED
-                        // Isso pode acontecer se alguém liberou manualmente
-                        problema = 'LIBERADA NO CDE';
                     }
+                    // REMOVIDO: else if (estadoCDE === 'INGRESADO')
+                    // Fotos INGRESADO são disponíveis - normal estar no carrinho!
 
                     if (problema) {
                         console.log(`[SYNC] ⚠️ Carrinho ${clientCode}: Foto ${photoNumber} - ${problema} (CDE: ${estadoCDE})`);
