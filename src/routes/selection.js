@@ -486,13 +486,15 @@ router.post('/finalize', async (req, res) => {
 
                 if (updatedAccessCode) {
                     console.log(`🔒 Cliente ${clientCode} DESATIVADO após seleção`);
-                    // Deletar o carrinho após criar seleção com sucesso
-                    try {
-                        await Cart.deleteOne({ sessionId: sessionId }).session(session);
-                        console.log(`🗑️ Carrinho ${sessionId} deletado após criar seleção`);
-                    } catch (deleteError) {
-                        console.error('⚠️ Erro ao deletar carrinho (não crítico):', deleteError.message);
-                    }
+
+                    // Marcar carrinho como inativo (dentro da transação)
+                    // Delete será feito DEPOIS da transação para evitar write conflict
+                    await Cart.updateOne(
+                        { sessionId: sessionId },
+                        { $set: { isActive: false } }
+                    ).session(session);
+                    console.log(`🔒 Carrinho ${sessionId} marcado como inativo`);
+
                     console.log(`   ➡️ Cliente precisa contatar vendedor para novo acesso`);
                 }
 
@@ -673,6 +675,16 @@ router.post('/finalize', async (req, res) => {
                 }
             });
         });
+
+        // ========== DELETAR CARRINHO APÓS TRANSAÇÃO ==========
+        // Fazer FORA da transação para evitar write conflicts com sync
+        try {
+            await Cart.deleteOne({ sessionId: sessionId });
+            console.log(`🗑️ Carrinho ${sessionId} deletado após criar seleção`);
+        } catch (deleteError) {
+            console.error('⚠️ Erro ao deletar carrinho (não crítico):', deleteError.message);
+            // Não é crítico - carrinho já está inativo, seleção já foi criada
+        }
 
     } catch (error) {
         console.error('❌ Erro ao finalizar seleção:', error);
