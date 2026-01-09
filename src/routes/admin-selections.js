@@ -3,6 +3,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const Selection = require('../models/Selection');
+const Cart = require('../models/Cart');
 const UnifiedProductComplete = require('../models/UnifiedProductComplete');
 const PhotoTagService = require('../services/PhotoTagService');
 const { authenticateToken } = require('./auth');
@@ -2139,6 +2140,103 @@ router.get('/analyze-photos', async (req, res) => {
         res.status(500).json({
             success: false,
             message: error.message
+        });
+    }
+});
+
+// ============================================
+// DELETE CART E LIBERAR FOTOS NO CDE
+// ============================================
+router.delete('/cart/:clientCode', authenticateToken, async (req, res) => {
+    try {
+        const { clientCode } = req.params;
+
+        console.log(`🗑️ [ADMIN] Solicitação para deletar carrinho do cliente ${clientCode}`);
+
+        // 1. Buscar carrinho
+        const cart = await Cart.findOne({ clientCode });
+
+        if (!cart) {
+            return res.status(404).json({
+                success: false,
+                message: `Carrinho não encontrado para cliente ${clientCode}`
+            });
+        }
+
+        console.log(`📦 [ADMIN] Carrinho encontrado: ${cart.items.length} itens`);
+
+        // 2. Extrair fotos únicas (não catálogo)
+        const photoItems = cart.items.filter(item =>
+            !item.isCatalogProduct && item.fileName
+        );
+
+        console.log(`📸 [ADMIN] ${photoItems.length} fotos únicas encontradas`);
+
+        // 3. Liberar fotos no CDE (marcar como INGRESADO)
+        if (photoItems.length > 0) {
+            const CDEWriter = require('../services/CDEWriter');
+            const cdeConnection = await require('../config/cde-database').getCDEConnection();
+
+            for (const item of photoItems) {
+                const photoNumber = item.fileName.match(/(\d+)/)?.[0];
+                if (!photoNumber) continue;
+
+                try {
+                    // Marcar como INGRESADO no CDE (disponível)
+                    await cdeConnection.execute(
+                        `UPDATE tbinventario
+                         SET AESTADOP = 'INGRESADO',
+                             RESERVEDUSU = NULL,
+                             RESERVEDDATE = NULL
+                         WHERE ATIPOETIQUETA = ?`,
+                        [photoNumber.padStart(5, '0')]
+                    );
+
+                    console.log(`✅ [ADMIN] Foto ${photoNumber} liberada no CDE (INGRESADO)`);
+                } catch (cdeError) {
+                    console.error(`⚠️ [ADMIN] Erro ao liberar foto ${photoNumber} no CDE:`, cdeError.message);
+                }
+            }
+
+            // 4. Liberar fotos no MongoDB
+            await UnifiedProductComplete.updateMany(
+                { fileName: { $in: photoItems.map(i => i.fileName) } },
+                {
+                    $set: { status: 'available' },
+                    $unset: {
+                        reservedBy: 1,
+                        reservedAt: 1,
+                        cartAddedAt: 1
+                    }
+                }
+            );
+
+            console.log(`✅ [ADMIN] ${photoItems.length} fotos liberadas no MongoDB`);
+        }
+
+        // 5. Deletar carrinho
+        await Cart.deleteOne({ _id: cart._id });
+
+        console.log(`🗑️ [ADMIN] Carrinho deletado com sucesso`);
+
+        res.json({
+            success: true,
+            message: `Carrinho deletado e ${photoItems.length} fotos liberadas`,
+            details: {
+                clientCode,
+                clientName: cart.clientName,
+                totalItems: cart.items.length,
+                photosReleased: photoItems.length,
+                sessionId: cart.sessionId
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ [ADMIN] Erro ao deletar carrinho:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao deletar carrinho',
+            error: error.message
         });
     }
 });
