@@ -64,6 +64,127 @@ router.post('/finalize', async (req, res) => {
 
     console.log(`📦 Carrinho encontrado: ${cart.totalItems} itens (sessionId: ${cart.sessionId})`);
 
+    // ========== ✅ VALIDAÇÃO CRÍTICA: Verificar fotos ANTES da transação ==========
+    const photoItems = cart.items.filter(item =>
+        !item.isCatalogProduct && item.fileName && (!item.ghostStatus || item.ghostStatus !== 'ghost')
+    );
+
+    if (photoItems.length > 0) {
+        console.log(`🔍 [FINALIZE] Validando ${photoItems.length} fotos antes de criar seleção...`);
+
+        const validationErrors = [];
+        const { getCDEConnection } = require('../config/cde-database');
+        const cdeConnection = await getCDEConnection();
+
+        try {
+            for (const item of photoItems) {
+                const fileName = item.fileName;
+                const photoNumber = fileName.match(/(\d+)/)?.[0];
+
+                if (!photoNumber) {
+                    validationErrors.push({
+                        fileName,
+                        error: 'Número da foto inválido'
+                    });
+                    continue;
+                }
+
+                // 1. Verificar MongoDB
+                const mongoPhoto = await UnifiedProductComplete.findOne({ fileName });
+
+                if (!mongoPhoto) {
+                    validationErrors.push({
+                        fileName,
+                        photoNumber,
+                        error: 'Foto não existe no sistema'
+                    });
+                    console.log(`❌ [FINALIZE] Foto ${photoNumber} não existe no MongoDB`);
+                    continue;
+                }
+
+                if (mongoPhoto.status === 'sold' || mongoPhoto.status === 'unavailable') {
+                    validationErrors.push({
+                        fileName,
+                        photoNumber,
+                        error: `Foto não está disponível (status: ${mongoPhoto.status})`
+                    });
+                    console.log(`❌ [FINALIZE] Foto ${photoNumber} status inválido: ${mongoPhoto.status}`);
+                    continue;
+                }
+
+                // 2. Verificar CDE
+                const [rows] = await cdeConnection.execute(
+                    'SELECT AESTADOP, RESERVEDUSU FROM tbinventario WHERE ATIPOETIQUETA = ?',
+                    [photoNumber.padStart(5, '0')]
+                );
+
+                if (rows.length === 0) {
+                    validationErrors.push({
+                        fileName,
+                        photoNumber,
+                        error: 'Foto não encontrada no CDE'
+                    });
+                    console.log(`❌ [FINALIZE] Foto ${photoNumber} não encontrada no CDE`);
+                    continue;
+                }
+
+                const estadoCDE = rows[0].AESTADOP;
+                const reservedBy = rows[0].RESERVEDUSU || '';
+
+                if (estadoCDE === 'RETIRADO') {
+                    validationErrors.push({
+                        fileName,
+                        photoNumber,
+                        error: 'Foto já foi vendida (RETIRADO)'
+                    });
+                    console.log(`❌ [FINALIZE] Foto ${photoNumber} já foi vendida (RETIRADO)`);
+                    continue;
+                }
+
+                if (estadoCDE === 'RESERVED' || estadoCDE === 'CONFIRMED') {
+                    const pertenceAoCliente = reservedBy.includes(clientCode) ||
+                                              reservedBy.includes(`-${clientCode}`) ||
+                                              reservedBy.includes(`_${clientCode}`);
+
+                    if (!pertenceAoCliente) {
+                        validationErrors.push({
+                            fileName,
+                            photoNumber,
+                            error: `Foto reservada por outro cliente (${reservedBy})`
+                        });
+                        console.log(`❌ [FINALIZE] Foto ${photoNumber} reservada por: ${reservedBy}`);
+                        continue;
+                    }
+                }
+            }
+
+            await cdeConnection.end();
+
+        } catch (cdeError) {
+            console.error(`⚠️ [FINALIZE] Erro ao validar fotos:`, cdeError.message);
+            if (cdeConnection) {
+                try { await cdeConnection.end(); } catch (e) {}
+            }
+        }
+
+        // Se houver erros, retornar ANTES da transação
+        if (validationErrors.length > 0) {
+            console.error(`❌ [FINALIZE] ${validationErrors.length} fotos com erro - ABORTANDO`);
+            validationErrors.forEach(err => {
+                console.error(`   - ${err.photoNumber || err.fileName}: ${err.error}`);
+            });
+
+            return res.status(400).json({
+                success: false,
+                message: `${validationErrors.length} foto(s) não está(ão) mais disponível(eis)`,
+                errors: validationErrors,
+                details: 'As fotos podem ter sido vendidas ou removidas do sistema. Por favor, remova-as do carrinho e tente novamente.'
+            });
+        }
+
+        console.log(`✅ [FINALIZE] Todas as ${photoItems.length} fotos validadas com sucesso`);
+    }
+
     // ========== AGORA INICIAR A TRANSAÇÃO ==========
     const session = await mongoose.startSession();
 

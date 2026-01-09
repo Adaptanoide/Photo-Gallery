@@ -1089,6 +1089,46 @@ class CDEIncrementalSync {
 
                     if (!photoNumber) continue;
 
+                    // ✅ NOVA VALIDAÇÃO: Verificar se foto existe no MongoDB
+                    const mongoPhoto = await UnifiedProductComplete.findOne({ fileName: fileName });
+
+                    if (!mongoPhoto) {
+                        // Foto NÃO EXISTE no MongoDB - remover do carrinho
+                        console.log(`[SYNC] 🗑️ Carrinho ${clientCode}: Foto ${photoNumber} NÃO EXISTE no MongoDB - REMOVENDO`);
+
+                        await Cart.findOneAndUpdate(
+                            { _id: carrinho._id },
+                            {
+                                $pull: { items: { fileName: fileName } },
+                                $set: { lastActivity: new Date() }
+                            }
+                        );
+
+                        // Atualizar totalItems
+                        const updatedCart = await Cart.findById(carrinho._id);
+                        if (updatedCart) {
+                            const validItems = updatedCart.items.filter(i => !i.ghostStatus || i.ghostStatus !== 'ghost');
+                            await Cart.updateOne(
+                                { _id: carrinho._id },
+                                { $set: { totalItems: validItems.length } }
+                            );
+                        }
+
+                        totalGhostsMarkados++; // Contador de removidos
+                        totalProblemas++;
+
+                        problemasDesteCarrinho.push({
+                            foto: photoNumber,
+                            fileName: fileName,
+                            problema: 'NÃO EXISTE NO MONGODB',
+                            estadoCDE: 'N/A',
+                            reservedUsu: 'N/A',
+                            removed: true
+                        });
+
+                        continue; // Pular validação CDE se foto não existe
+                    }
+
                     // Consultar estado no CDE
                     const [rows] = await cdeConnection.execute(
                         'SELECT AESTADOP, RESERVEDUSU, AIDH FROM tbinventario WHERE ATIPOETIQUETA = ? ORDER BY AFECHA DESC',

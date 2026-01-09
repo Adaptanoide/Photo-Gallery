@@ -60,6 +60,48 @@ class CartService {
             console.log(`[CART] 📦 Tipo: ${isComingSoon ? 'COMING SOON' : 'AVAILABLE'} | Tabela: ${cdeTable}`);
 
             if (!product) {
+                // ✅ NOVA VALIDAÇÃO: Verificar no CDE antes de criar produto temporário
+                // Não criar produto se foto não existe ou está RETIRADO
+                const { getCDEConnection } = require('../config/cde-database');
+                const cdeConnection = await getCDEConnection();
+
+                try {
+                    const [cdeRows] = await cdeConnection.execute(
+                        'SELECT AESTADOP, RESERVEDUSU FROM tbinventario WHERE ATIPOETIQUETA = ?',
+                        [photoNumber.padStart(5, '0')]
+                    );
+
+                    if (cdeRows.length === 0) {
+                        await cdeConnection.end();
+                        throw new Error(`Foto ${photoNumber} não encontrada no sistema`);
+                    }
+
+                    const estadoCDE = cdeRows[0].AESTADOP;
+                    if (estadoCDE === 'RETIRADO') {
+                        await cdeConnection.end();
+                        throw new Error(`Foto ${photoNumber} já foi vendida e não está mais disponível`);
+                    }
+
+                    if (estadoCDE !== 'INGRESADO') {
+                        await cdeConnection.end();
+                        throw new Error(`Foto ${photoNumber} não está disponível para seleção`);
+                    }
+
+                    await cdeConnection.end();
+                } catch (cdeError) {
+                    if (cdeConnection) {
+                        try { await cdeConnection.end(); } catch (e) {}
+                    }
+                    // Re-throw validation errors
+                    if (cdeError.message.includes('não encontrada') ||
+                        cdeError.message.includes('já foi vendida') ||
+                        cdeError.message.includes('não está disponível')) {
+                        throw cdeError;
+                    }
+                    // Log outros erros mas continua (fail-open para não bloquear)
+                    console.error(`⚠️ [CART] Erro ao validar CDE:`, cdeError.message);
+                }
+
                 product = new UnifiedProductComplete({
                     idhCode: `TEMP_${Date.now()}`,
                     photoNumber: photoNumber,
@@ -73,10 +115,74 @@ class CartService {
                 await product.save();
             }
 
-            // 2. Verificar disponibilidade
+            // ✅ NOVA VALIDAÇÃO: Verificar status no MongoDB E no CDE
+            // 2a. Verificar MongoDB
             if (product.status !== 'available') {
                 if (product.reservedBy?.clientCode !== clientCode) {
                     throw new Error('Produto não disponível');
+                }
+            }
+
+            if (product.status === 'sold' || product.status === 'unavailable') {
+                throw new Error(`Foto ${photoNumber} não está mais disponível`);
+            }
+
+            // 2b. Verificar CDE (se não for Coming Soon)
+            if (!isComingSoon && photoNumber && photoNumber !== 'unknown') {
+                const { getCDEConnection } = require('../config/cde-database');
+                const cdeConnection = await getCDEConnection();
+
+                try {
+                    const [cdeRows] = await cdeConnection.execute(
+                        'SELECT AESTADOP, RESERVEDUSU FROM tbinventario WHERE ATIPOETIQUETA = ?',
+                        [photoNumber.padStart(5, '0')]
+                    );
+
+                    if (cdeRows.length === 0) {
+                        await cdeConnection.end();
+                        throw new Error(`Foto ${photoNumber} não encontrada no sistema`);
+                    }
+
+                    const estadoCDE = cdeRows[0].AESTADOP;
+                    const reservedBy = cdeRows[0].RESERVEDUSU || '';
+
+                    if (estadoCDE === 'RETIRADO') {
+                        await cdeConnection.end();
+                        throw new Error(`Foto ${photoNumber} já foi vendida e não está mais disponível`);
+                    }
+
+                    if (estadoCDE === 'RESERVED' || estadoCDE === 'CONFIRMED') {
+                        const pertenceAoCliente = reservedBy.includes(clientCode) ||
+                                                  reservedBy.includes(`-${clientCode}`) ||
+                                                  reservedBy.includes(`_${clientCode}`);
+
+                        if (!pertenceAoCliente) {
+                            await cdeConnection.end();
+                            throw new Error(`Foto ${photoNumber} já está reservada por outro cliente`);
+                        }
+                    }
+
+                    if (estadoCDE !== 'INGRESADO' && estadoCDE !== 'RESERVED' && estadoCDE !== 'CONFIRMED') {
+                        await cdeConnection.end();
+                        throw new Error(`Foto ${photoNumber} não está disponível para seleção (Status: ${estadoCDE})`);
+                    }
+
+                    await cdeConnection.end();
+                    console.log(`[CART] ✅ Validação CDE OK: ${photoNumber} (${estadoCDE})`);
+
+                } catch (cdeError) {
+                    if (cdeConnection) {
+                        try { await cdeConnection.end(); } catch (e) {}
+                    }
+                    // Re-throw validation errors
+                    if (cdeError.message.includes('não encontrada') ||
+                        cdeError.message.includes('já foi vendida') ||
+                        cdeError.message.includes('já está reservada') ||
+                        cdeError.message.includes('não está disponível')) {
+                        throw cdeError;
+                    }
+                    // Log outros erros mas continua (fail-open para não bloquear)
+                    console.error(`⚠️ [CART] Erro ao validar CDE:`, cdeError.message);
                 }
             }
 
