@@ -952,14 +952,33 @@ async function calculateCartTotals(cart) {
     const isSpecialSelection = accessCode?.accessType === 'special';
 
     // ============================================
+    // PASSO 0: FILTRAR GHOST ITEMS (não devem participar do cálculo)
+    // ============================================
+    const validItems = cart.items.filter(item => item.ghostStatus !== 'ghost');
+
+    if (validItems.length === 0) {
+        console.log(`👻 [CART] Todos os itens são ghost - carrinho vazio para cálculo`);
+        return {
+            subtotal: 0,
+            discount: 0,
+            total: 0,
+            mixMatchInfo: null,
+            validItemsCount: 0,
+            ghostItemsCount: cart.items.length
+        };
+    }
+
+    console.log(`📊 [CART] Calculando: ${validItems.length} itens válidos (${cart.items.length - validItems.length} ghosts excluídos)`);
+
+    // ============================================
     // PASSO 1: Extrair categorias únicas e buscar do banco
     // ============================================
-    const uniqueCategoryPaths = [...new Set(cart.items.map(item => item.category || 'uncategorized'))];
+    const uniqueCategoryPaths = [...new Set(validItems.map(item => item.category || 'uncategorized'))];
 
     // Identificar quais categorias têm APENAS produtos de catálogo (para não mostrar warnings)
     const catalogOnlyCategories = new Set();
     for (const categoryPath of uniqueCategoryPaths) {
-        const itemsInCategory = cart.items.filter(item => (item.category || 'uncategorized') === categoryPath);
+        const itemsInCategory = validItems.filter(item => (item.category || 'uncategorized') === categoryPath);
         const allAreCatalog = itemsInCategory.every(item => item.isCatalogProduct);
         if (allAreCatalog) {
             catalogOnlyCategories.add(categoryPath);
@@ -1006,7 +1025,7 @@ async function calculateCartTotals(cart) {
     const globalMixMatchItems = {}; // Items que participam do Mix & Match
     const separateItems = {};       // Items que NÃO participam
 
-    cart.items.forEach(item => {
+    validItems.forEach(item => {
         const categoryPath = item.category || 'uncategorized';
 
         // ✅ IMPORTANTE: Produtos de catálogo (stock) NUNCA participam do Mix & Match
