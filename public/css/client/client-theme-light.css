@@ -264,15 +264,16 @@ body.client-page:not(.dark-mode) .category-items .cart-item {
     color: #10b981 !important;
 }
 
-/* FIX: Garantir que tier-price sempre seja verde no photo modal */
+/* FIX: Garantir que tier-price sempre seja visível no photo modal */
 .client-page .photo-modal .modal-volume-pricing .tier-price {
-    color: #10b981 !important;
+    color: inherit !important;
 }
 
-/* FIX: Garantir que tiers inativos tenham background transparente e borda sutil */
+/* FIX: Manter aparência dark nos tiers mesmo em light theme */
 .client-page .photo-modal .modal-volume-pricing .volume-tier:not(.active) {
-    background: rgba(255, 255, 255, 0.1) !important;
+    background: rgba(0, 0, 0, 0.3) !important;
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    color: rgba(255, 255, 255, 0.5) !important;
 }
 
 /* ===== OTHER MODALS - Light Theme (Not Photo Modal) ===== */
