@@ -1022,7 +1022,8 @@ router.post('/:selectionId/reopen-cart', async (req, res) => {
                 const reservedCount = await CDEWriter.bulkMarkAsReserved(
                     photoNumbers,
                     selection.clientCode,
-                    selection.clientName
+                    selection.clientName,
+                    selection.salesRep || 'Unassigned'
                 );
 
                 const duration = Date.now() - startTime;

@@ -1,0 +1,625 @@
+[
+  {
+    "qbItem": "5365",
+    "displayName": "Brazil Best Sellers → Super Promo Small - Assorted Natural Tones",
+    "cdeCount": 108,
+    "mongoCount": 0,
+    "diff": 108
+  },
+  {
+    "qbItem": "5375LGT",
+    "displayName": "Brazil Best Sellers → Light Tones Mix ML-XL",
+    "cdeCount": 82,
+    "mongoCount": 0,
+    "diff": 82
+  },
+  {
+    "qbItem": "5475SP",
+    "displayName": "Brazil Best Sellers → Best Value -Salt & Pepper Mix - Brown & White + Tricolor",
+    "cdeCount": 62,
+    "mongoCount": 0,
+    "diff": 62
+  },
+  {
+    "qbItem": "5475BR",
+    "displayName": "Brazil Best Sellers → Best Value - Brindle Medium and Dark Tones Mix ML-XL",
+    "cdeCount": 57,
+    "mongoCount": 0,
+    "diff": 57
+  },
+  {
+    "qbItem": "5475SB",
+    "displayName": "Brazil Best Sellers → Best Value -Salt & Pepper Mix - Black & White",
+    "cdeCount": 50,
+    "mongoCount": 0,
+    "diff": 50
+  },
+  {
+    "qbItem": "5301SP",
+    "displayName": "Brazil Top Selected Categories → Small → Salt & Pepper - Tricolor, Brown and White Small",
+    "cdeCount": 48,
+    "mongoCount": 0,
+    "diff": 48
+  },
+  {
+    "qbItem": "5375DRK",
+    "displayName": "Brazil Best Sellers → Dark Tones Mix ML-XL",
+    "cdeCount": 45,
+    "mongoCount": 0,
+    "diff": 45
+  },
+  {
+    "qbItem": "5475SC",
+    "displayName": "Brazil Best Sellers → Best Value -Salt & Pepper Mix - Chocolate & White",
+    "cdeCount": 45,
+    "mongoCount": 0,
+    "diff": 45
+  },
+  {
+    "qbItem": "5205",
+    "displayName": "Colombian Cowhides → 5. Value Tricolor Dark Tones & Creamish White L-XL",
+    "cdeCount": 44,
+    "mongoCount": 0,
+    "diff": 44
+  },
+  {
+    "qbItem": "5302B SC",
+    "displayName": "Brazil Top Selected Categories → Medium Large → Salt & Pepper Chocolate and White ML",
+    "cdeCount": 38,
+    "mongoCount": 0,
+    "diff": 38
+  },
+  {
+    "qbItem": "5203TRI",
+    "displayName": "Colombian Cowhides → 3. X-Large → Tricolor Mix XL",
+    "cdeCount": 34,
+    "mongoCount": 0,
+    "diff": 34
+  },
+  {
+    "qbItem": "5375EXO",
+    "displayName": "Brazil Best Sellers → Exotic Tones ML-XL",
+    "cdeCount": 33,
+    "mongoCount": 0,
+    "diff": 33
+  },
+  {
+    "qbItem": "5302A BB",
+    "displayName": "Brazil Top Selected Categories → Medium Large → Brindle White Belly ML",
+    "cdeCount": 30,
+    "mongoCount": 0,
+    "diff": 30
+  },
+  {
+    "qbItem": "5302B WB",
+    "displayName": "Brazil Top Selected Categories → Medium Large → Brindle White Backbone ML",
+    "cdeCount": 27,
+    "mongoCount": 0,
+    "diff": 27
+  },
+  {
+    "qbItem": "5200TRI",
+    "displayName": "Colombian Cowhides → 0. Small → Tricolor Mix Small",
+    "cdeCount": 25,
+    "mongoCount": 0,
+    "diff": 25
+  },
+  {
+    "qbItem": "5302B SP",
+    "displayName": "Brazil Top Selected Categories → Medium Large → Salt & Pepper - Tricolor, Brown and White ML",
+    "cdeCount": 25,
+    "mongoCount": 0,
+    "diff": 25
+  },
+  {
+    "qbItem": "5303B WB",
+    "displayName": "Brazil Top Selected Categories → Extra Large → Brindle White Backbone XL",
+    "cdeCount": 25,
+    "mongoCount": 0,
+    "diff": 25
+  },
+  {
+    "qbItem": "5201TRI",
+    "displayName": "Colombian Cowhides → 1. Medium → Tricolor Mix M",
+    "cdeCount": 24,
+    "mongoCount": 0,
+    "diff": 24
+  },
+  {
+    "qbItem": "5301TP",
+    "displayName": "Brazil Top Selected Categories → Small → Taupe Small",
+    "cdeCount": 24,
+    "mongoCount": 0,
+    "diff": 24
+  },
+  {
+    "qbItem": "5203TRS",
+    "displayName": "Colombian Cowhides → 3. X-Large → Tricolor Spotted XL",
+    "cdeCount": 22,
+    "mongoCount": 0,
+    "diff": 22
+  },
+  {
+    "qbItem": "5303A BB",
+    "displayName": "Brazil Top Selected Categories → Extra Large → Brindle White Belly XL",
+    "cdeCount": 22,
+    "mongoCount": 0,
+    "diff": 22
+  },
+  {
+    "qbItem": "5303B SB",
+    "displayName": "Brazil Top Selected Categories → Extra Large → Salt & Pepper Black and White XL",
+    "cdeCount": 20,
+    "mongoCount": 0,
+    "diff": 20
+  },
+  {
+    "qbItem": "5301WB",
+    "displayName": "Brazil Top Selected Categories → Small → Brindle White Backbone Small",
+    "cdeCount": 18,
+    "mongoCount": 0,
+    "diff": 18
+  },
+  {
+    "qbItem": "5302A PE",
+    "displayName": "Brazil Top Selected Categories → Medium Large → Palomino Exotic ML",
+    "cdeCount": 17,
+    "mongoCount": 0,
+    "diff": 17
+  },
+  {
+    "qbItem": "5303A PE",
+    "displayName": "Brazil Top Selected Categories → Extra Large → Palomino Exotic XL",
+    "cdeCount": 17,
+    "mongoCount": 0,
+    "diff": 17
+  },
+  {
+    "qbItem": "5303C GB",
+    "displayName": "Brazil Top Selected Categories → Extra Large → Grey Beige XL",
+    "cdeCount": 17,
+    "mongoCount": 0,
+    "diff": 17
+  },
+  {
+    "qbItem": "3521",
+    "displayName": "Rodeo Rugs → 60\" Round Multi Star Colombia",
+    "cdeCount": 16,
+    "mongoCount": 0,
+    "diff": 16
+  },
+  {
+    "qbItem": "5302B SB",
+    "displayName": "Brazil Top Selected Categories → Medium Large → Salt & Pepper Black and White ML",
+    "cdeCount": 16,
+    "mongoCount": 0,
+    "diff": 16
+  },
+  {
+    "qbItem": "5302B WR",
+    "displayName": "Brazil Top Selected Categories → Medium Large → Black & White Reddish ML",
+    "cdeCount": 15,
+    "mongoCount": 0,
+    "diff": 15
+  },
+  {
+    "qbItem": "5302C GB",
+    "displayName": "Brazil Top Selected Categories → Medium Large → Grey Beige ML",
+    "cdeCount": 15,
+    "mongoCount": 0,
+    "diff": 15
+  },
+  {
+    "qbItem": "6001",
+    "displayName": "Brazil Top Selected Categories → Small → Grey Small",
+    "cdeCount": 15,
+    "mongoCount": 0,
+    "diff": 15
+  },
+  {
+    "qbItem": "5301PE",
+    "displayName": "Brazil Top Selected Categories → Small → Palomino Exotic Small",
+    "cdeCount": 14,
+    "mongoCount": 0,
+    "diff": 14
+  },
+  {
+    "qbItem": "5203BRW",
+    "displayName": "Colombian Cowhides → 3. X-Large → Brown & White XL",
+    "cdeCount": 13,
+    "mongoCount": 0,
+    "diff": 13
+  },
+  {
+    "qbItem": "5301SB",
+    "displayName": "Brazil Top Selected Categories → Small → Salt & Pepper Black and White Small",
+    "cdeCount": 13,
+    "mongoCount": 0,
+    "diff": 13
+  },
+  {
+    "qbItem": "5302B CH",
+    "displayName": "Brazil Top Selected Categories → Medium Large → Champagne ML",
+    "cdeCount": 13,
+    "mongoCount": 0,
+    "diff": 13
+  },
+  {
+    "qbItem": "5303B SC",
+    "displayName": "Brazil Top Selected Categories → Extra Large → Salt & Pepper Chocolate and White XL",
+    "cdeCount": 13,
+    "mongoCount": 0,
+    "diff": 13
+  },
+  {
+    "qbItem": "6002",
+    "displayName": "Brazil Top Selected Categories → Medium Large → Grey ML",
+    "cdeCount": 13,
+    "mongoCount": 0,
+    "diff": 13
+  },
+  {
+    "qbItem": "5201BRW",
+    "displayName": "Colombian Cowhides → 1. Medium → Brown & White M",
+    "cdeCount": 12,
+    "mongoCount": 0,
+    "diff": 12
+  },
+  {
+    "qbItem": "5201BRI",
+    "displayName": "Colombian Cowhides → 1. Medium → Brindle Mix M",
+    "cdeCount": 11,
+    "mongoCount": 0,
+    "diff": 11
+  },
+  {
+    "qbItem": "5202BRW",
+    "displayName": "Colombian Cowhides → 2. Large → Brown & White",
+    "cdeCount": 11,
+    "mongoCount": 0,
+    "diff": 11
+  },
+  {
+    "qbItem": "5301WR",
+    "displayName": "Brazil Top Selected Categories → Small → Black & White Reddish Small",
+    "cdeCount": 11,
+    "mongoCount": 0,
+    "diff": 11
+  },
+  {
+    "qbItem": "5302C GR",
+    "displayName": "Brazil Top Selected Categories → Medium Large → Brindle Grey ML",
+    "cdeCount": 11,
+    "mongoCount": 0,
+    "diff": 11
+  },
+  {
+    "qbItem": "5302B TP",
+    "displayName": "Brazil Top Selected Categories → Medium Large → Taupe ML",
+    "cdeCount": 10,
+    "mongoCount": 0,
+    "diff": 10
+  },
+  {
+    "qbItem": "5302C BL",
+    "displayName": "Brazil Top Selected Categories → Medium Large → Brindle Light Grey-Beige ML",
+    "cdeCount": 10,
+    "mongoCount": 0,
+    "diff": 10
+  },
+  {
+    "qbItem": "3230",
+    "displayName": "Rodeo Rugs → 3' x 5' Star & Longhorns Colombia",
+    "cdeCount": 9,
+    "mongoCount": 0,
+    "diff": 9
+  },
+  {
+    "qbItem": "5301BL",
+    "displayName": "Brazil Top Selected Categories → Small → Brindle Light Grey-Beige Small",
+    "cdeCount": 9,
+    "mongoCount": 0,
+    "diff": 9
+  },
+  {
+    "qbItem": "5303B SP",
+    "displayName": "Brazil Top Selected Categories → Extra Large → Salt & Pepper - Tricolor, Brown and White XL",
+    "cdeCount": 9,
+    "mongoCount": 0,
+    "diff": 9
+  },
+  {
+    "qbItem": "5303B TP",
+    "displayName": "Brazil Top Selected Categories → Extra Large → Taupe XL",
+    "cdeCount": 9,
+    "mongoCount": 0,
+    "diff": 9
+  },
+  {
+    "qbItem": "5303C GR",
+    "displayName": "Brazil Top Selected Categories → Extra Large → Brindle Grey XL",
+    "cdeCount": 9,
+    "mongoCount": 0,
+    "diff": 9
+  },
+  {
+    "qbItem": "5301BB",
+    "displayName": "Brazil Top Selected Categories → Small → Brindle White Belly Small",
+    "cdeCount": 8,
+    "mongoCount": 0,
+    "diff": 8
+  },
+  {
+    "qbItem": "5301CH",
+    "displayName": "Brazil Top Selected Categories → Small → Champagne Small",
+    "cdeCount": 8,
+    "mongoCount": 0,
+    "diff": 8
+  },
+  {
+    "qbItem": "5302A HF",
+    "displayName": "Brazil Top Selected Categories → Medium Large → Hereford ML",
+    "cdeCount": 8,
+    "mongoCount": 0,
+    "diff": 8
+  },
+  {
+    "qbItem": "5303B BW",
+    "displayName": "Brazil Top Selected Categories → Extra Large → Black & White XL",
+    "cdeCount": 8,
+    "mongoCount": 0,
+    "diff": 8
+  },
+  {
+    "qbItem": "6003",
+    "displayName": "Brazil Top Selected Categories → Extra Large → Grey XL",
+    "cdeCount": 8,
+    "mongoCount": 0,
+    "diff": 8
+  },
+  {
+    "qbItem": "5301BR",
+    "displayName": "Brazil Top Selected Categories → Small → Brown & White Small",
+    "cdeCount": 7,
+    "mongoCount": 0,
+    "diff": 7
+  },
+  {
+    "qbItem": "5301MB",
+    "displayName": "Brazil Top Selected Categories → Small → Brindle Medium Tone Small",
+    "cdeCount": 7,
+    "mongoCount": 0,
+    "diff": 7
+  },
+  {
+    "qbItem": "5203TRC",
+    "displayName": "Colombian Cowhides → 3. X-Large → Tricolor Clouded XL",
+    "cdeCount": 6,
+    "mongoCount": 0,
+    "diff": 6
+  },
+  {
+    "qbItem": "5301GB",
+    "displayName": "Brazil Top Selected Categories → Small → Grey Beige Small",
+    "cdeCount": 6,
+    "mongoCount": 0,
+    "diff": 6
+  },
+  {
+    "qbItem": "5303C BL",
+    "displayName": "Brazil Top Selected Categories → Extra Large → Brindle Light Grey-Beige XL",
+    "cdeCount": 6,
+    "mongoCount": 0,
+    "diff": 6
+  },
+  {
+    "qbItem": "5202TRS",
+    "displayName": "Colombian Cowhides → 2. Large → Tricolor Spotted L",
+    "cdeCount": 5,
+    "mongoCount": 0,
+    "diff": 5
+  },
+  {
+    "qbItem": "5302B BW",
+    "displayName": "Brazil Top Selected Categories → Medium Large → Black & White ML",
+    "cdeCount": 5,
+    "mongoCount": 0,
+    "diff": 5
+  },
+  {
+    "qbItem": "5202BLW",
+    "displayName": "Colombian Cowhides → 2. Large → Black & White L",
+    "cdeCount": 4,
+    "mongoCount": 0,
+    "diff": 4
+  },
+  {
+    "qbItem": "5204",
+    "displayName": "Colombian Cowhides → 4. Value Tricolor Dark Tones & Creamish White S-M",
+    "cdeCount": 4,
+    "mongoCount": 0,
+    "diff": 4
+  },
+  {
+    "qbItem": "5311",
+    "displayName": "Brazil Top Selected Categories → Small → Tricolor Small",
+    "cdeCount": 4,
+    "mongoCount": 0,
+    "diff": 4
+  },
+  {
+    "qbItem": "6012",
+    "displayName": "Brazil Top Selected Categories → Medium Large → Natural White ML",
+    "cdeCount": 4,
+    "mongoCount": 0,
+    "diff": 4
+  },
+  {
+    "qbItem": "5202TRC",
+    "displayName": "Colombian Cowhides → 2. Large → Tricolor Clouded L",
+    "cdeCount": 3,
+    "mongoCount": 0,
+    "diff": 3
+  },
+  {
+    "qbItem": "5202TRI",
+    "displayName": "Colombian Cowhides → 2. Large → Tricolor Mix L",
+    "cdeCount": 3,
+    "mongoCount": 0,
+    "diff": 3
+  },
+  {
+    "qbItem": "5300",
+    "displayName": "Brazil Best Sellers → Super Promo XS - Assorted Tones",
+    "cdeCount": 3,
+    "mongoCount": 0,
+    "diff": 3
+  },
+  {
+    "qbItem": "5302B BR",
+    "displayName": "Brazil Top Selected Categories → Medium Large → Brown & White ML",
+    "cdeCount": 3,
+    "mongoCount": 0,
+    "diff": 3
+  },
+  {
+    "qbItem": "5500HF",
+    "displayName": "Cowhide Hair On BRA With Leather Binding And Lined → Hereford",
+    "cdeCount": 3,
+    "mongoCount": 0,
+    "diff": 3
+  },
+  {
+    "qbItem": "6011",
+    "displayName": "Brazil Top Selected Categories → Small → Natural White Small",
+    "cdeCount": 3,
+    "mongoCount": 0,
+    "diff": 3
+  },
+  {
+    "qbItem": "5202EXO",
+    "displayName": "Colombian Cowhides → 2. Large → Exotic L",
+    "cdeCount": 2,
+    "mongoCount": 0,
+    "diff": 2
+  },
+  {
+    "qbItem": "5203BLW",
+    "displayName": "Colombian Cowhides → 3. X-Large → Black & White XL",
+    "cdeCount": 2,
+    "mongoCount": 0,
+    "diff": 2
+  },
+  {
+    "qbItem": "5301BW",
+    "displayName": "Brazil Top Selected Categories → Small → Black & White Small",
+    "cdeCount": 2,
+    "mongoCount": 0,
+    "diff": 2
+  },
+  {
+    "qbItem": "5301HF",
+    "displayName": "Brazil Top Selected Categories → Small → Hereford Small",
+    "cdeCount": 2,
+    "mongoCount": 0,
+    "diff": 2
+  },
+  {
+    "qbItem": "5303B BR",
+    "displayName": "Brazil Top Selected Categories → Extra Large → Brown & White XL",
+    "cdeCount": 2,
+    "mongoCount": 0,
+    "diff": 2
+  },
+  {
+    "qbItem": "5500SB",
+    "displayName": "Cowhide Hair On BRA With Leather Binding And Lined → Salt & Pepper Black and White",
+    "cdeCount": 2,
+    "mongoCount": 0,
+    "diff": 2
+  },
+  {
+    "qbItem": "5500WR",
+    "displayName": "Cowhide Hair On BRA With Leather Binding And Lined → Black and White Reddish",
+    "cdeCount": 2,
+    "mongoCount": 0,
+    "diff": 2
+  },
+  {
+    "qbItem": "6022",
+    "displayName": "Brazil Top Selected Categories → Medium Large → Buttercream ML",
+    "cdeCount": 2,
+    "mongoCount": 0,
+    "diff": 2
+  },
+  {
+    "qbItem": "5201BLW",
+    "displayName": "Colombian Cowhides → 1. Medium → Black & White M",
+    "cdeCount": 1,
+    "mongoCount": 0,
+    "diff": 1
+  },
+  {
+    "qbItem": "5303A HF",
+    "displayName": "Brazil Top Selected Categories → Extra Large → Hereford XL",
+    "cdeCount": 1,
+    "mongoCount": 0,
+    "diff": 1
+  },
+  {
+    "qbItem": "5303B PA",
+    "displayName": "Brazil Top Selected Categories → Extra Large → Palomino Solid XL",
+    "cdeCount": 1,
+    "mongoCount": 0,
+    "diff": 1
+  },
+  {
+    "qbItem": "5312",
+    "displayName": "Brazil Top Selected Categories → Medium Large → Tricolor ML",
+    "cdeCount": 1,
+    "mongoCount": 0,
+    "diff": 1
+  },
+  {
+    "qbItem": "5500BL",
+    "displayName": "Cowhide Hair On BRA With Leather Binding And Lined → Brindle Light Grey-Beige MIX",
+    "cdeCount": 1,
+    "mongoCount": 0,
+    "diff": 1
+  },
+  {
+    "qbItem": "5500CH",
+    "displayName": "Cowhide Hair On BRA With Leather Binding And Lined → Champagne",
+    "cdeCount": 1,
+    "mongoCount": 0,
+    "diff": 1
+  },
+  {
+    "qbItem": "5500SP",
+    "displayName": "Cowhide Hair On BRA With Leather Binding And Lined → Salt & Pepper Brown and White",
+    "cdeCount": 1,
+    "mongoCount": 0,
+    "diff": 1
+  },
+  {
+    "qbItem": "5500WB",
+    "displayName": "Cowhide Hair On BRA With Leather Binding And Lined → Brindle White Backbone",
+    "cdeCount": 1,
+    "mongoCount": 0,
+    "diff": 1
+  },
+  {
+    "qbItem": "6013",
+    "displayName": "Brazil Top Selected Categories → Extra Large → Natural White XL",
+    "cdeCount": 1,
+    "mongoCount": 0,
+    "diff": 1
+  },
+  {
+    "qbItem": "9-9058",
+    "displayName": "Calfskins → Metallica Silver On Black",
+    "cdeCount": 1,
+    "mongoCount": 0,
+    "diff": 1
+  }
+]

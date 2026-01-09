@@ -1,0 +1,119 @@
+{
+  "summary": {
+    "totalCategories": 10,
+    "totalCDE": 16,
+    "totalMongo": 5,
+    "totalMissing": 11,
+    "percentSynced": "31.3"
+  },
+  "categories": [
+    {
+      "qbItem": "5500BL",
+      "displayName": "Brindle Light Grey-Beige MIX",
+      "googleDrivePath": "Cowhide Hair On BRA With Leather Binding And Lined/Brindle Light Grey-Beige MIX/",
+      "cdeCount": 1,
+      "mongoCount": 0,
+      "missing": 1,
+      "missingPhotos": [
+        "31137"
+      ]
+    },
+    {
+      "qbItem": "5500BR",
+      "displayName": "Brown & White",
+      "googleDrivePath": "Cowhide Hair On BRA With Leather Binding And Lined/Brown & White/",
+      "cdeCount": 0,
+      "mongoCount": 0,
+      "missing": 0,
+      "missingPhotos": []
+    },
+    {
+      "qbItem": "5500CH",
+      "displayName": "Champagne",
+      "googleDrivePath": "Cowhide Hair On BRA With Leather Binding And Lined/Champagne/",
+      "cdeCount": 1,
+      "mongoCount": 0,
+      "missing": 1,
+      "missingPhotos": [
+        "31144"
+      ]
+    },
+    {
+      "qbItem": "5500HF",
+      "displayName": "Hereford",
+      "googleDrivePath": "Cowhide Hair On BRA With Leather Binding And Lined/Hereford/",
+      "cdeCount": 3,
+      "mongoCount": 0,
+      "missing": 3,
+      "missingPhotos": [
+        "25657",
+        "25658",
+        "25660"
+      ]
+    },
+    {
+      "qbItem": "5500PE",
+      "displayName": "Palomino Exotic",
+      "googleDrivePath": "Cowhide Hair On BRA With Leather Binding And Lined/Palomino Exotic/",
+      "cdeCount": 5,
+      "mongoCount": 5,
+      "missing": 0,
+      "missingPhotos": []
+    },
+    {
+      "qbItem": "5500SB",
+      "displayName": "Salt & Pepper Black and White",
+      "googleDrivePath": "Cowhide Hair On BRA With Leather Binding And Lined/Salt & Pepper Black and White/",
+      "cdeCount": 2,
+      "mongoCount": 0,
+      "missing": 2,
+      "missingPhotos": [
+        "31135",
+        "31136"
+      ]
+    },
+    {
+      "qbItem": "5500SP",
+      "displayName": "Salt & Pepper Brown and White",
+      "googleDrivePath": "Cowhide Hair On BRA With Leather Binding And Lined/Salt & Pepper Brown and White/",
+      "cdeCount": 1,
+      "mongoCount": 0,
+      "missing": 1,
+      "missingPhotos": [
+        "31133"
+      ]
+    },
+    {
+      "qbItem": "5500TP",
+      "displayName": "Taupe",
+      "googleDrivePath": "Cowhide Hair On BRA With Leather Binding And Lined/Taupe/",
+      "cdeCount": 0,
+      "mongoCount": 0,
+      "missing": 0,
+      "missingPhotos": []
+    },
+    {
+      "qbItem": "5500WB",
+      "displayName": "Brindle White Backbone",
+      "googleDrivePath": "Cowhide Hair On BRA With Leather Binding And Lined/Brindle White Backbone/",
+      "cdeCount": 1,
+      "mongoCount": 0,
+      "missing": 1,
+      "missingPhotos": [
+        "31139"
+      ]
+    },
+    {
+      "qbItem": "5500WR",
+      "displayName": "Black and White Reddish",
+      "googleDrivePath": "Cowhide Hair On BRA With Leather Binding And Lined/Black and White Reddish/",
+      "cdeCount": 2,
+      "mongoCount": 0,
+      "missing": 2,
+      "missingPhotos": [
+        "31140",
+        "31141"
+      ]
+    }
+  ]
+}

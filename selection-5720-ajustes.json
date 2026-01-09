@@ -1,0 +1,154 @@
+{
+  "selectionId": "69601c793c7cda0045df6785",
+  "clientCode": "5720",
+  "totalAtual": 9407,
+  "totalSubtrair": 1368,
+  "totalNovo": 8039,
+  "itemsAtual": 85,
+  "itemsRemover": 12,
+  "itemsNovo": 73,
+  "fotosRemover": [
+    {
+      "photoNumber": "08223",
+      "fileName": "08223.webp",
+      "motivo": "RETIRADO",
+      "subtotal": 109
+    },
+    {
+      "photoNumber": "28639",
+      "fileName": "28639.webp",
+      "motivo": "RETIRADO",
+      "subtotal": 159
+    },
+    {
+      "photoNumber": "29170",
+      "fileName": "29170.webp",
+      "motivo": "RETIRADO",
+      "subtotal": 159
+    },
+    {
+      "photoNumber": "29202",
+      "fileName": "29202.webp",
+      "motivo": "RETIRADO",
+      "subtotal": 159
+    },
+    {
+      "photoNumber": "31462",
+      "fileName": "31462.webp",
+      "motivo": "RETIRADO",
+      "subtotal": 99
+    },
+    {
+      "photoNumber": "31452",
+      "fileName": "31452.webp",
+      "motivo": "RETIRADO",
+      "subtotal": 99
+    },
+    {
+      "photoNumber": "32344",
+      "fileName": "32344.webp",
+      "motivo": "RETIRADO",
+      "subtotal": 99
+    },
+    {
+      "photoNumber": "35528",
+      "fileName": "35528.webp",
+      "motivo": "RETIRADO",
+      "subtotal": 95
+    },
+    {
+      "photoNumber": "35529",
+      "fileName": "35529.webp",
+      "motivo": "RETIRADO",
+      "subtotal": 95
+    },
+    {
+      "photoNumber": "36517",
+      "fileName": "36517.webp",
+      "motivo": "RETIRADO",
+      "subtotal": 105
+    },
+    {
+      "photoNumber": "36520",
+      "fileName": "36520.webp",
+      "motivo": "RETIRADO",
+      "subtotal": 105
+    },
+    {
+      "photoNumber": "35497",
+      "fileName": "35497.webp",
+      "motivo": "QBITEM ERRADO",
+      "subtotal": 85
+    }
+  ],
+  "ajustesPorCategoria": {
+    "Brazil Best Sellers → Best Value - Brindle Medium and Dark Tones Mix ML-XL": {
+      "categoria": "Brazil Best Sellers → Best Value - Brindle Medium and Dark Tones Mix ML-XL",
+      "qbItem": "N/A",
+      "fotos": [
+        "08223"
+      ],
+      "quantidadeTotal": 1,
+      "valorTotal": 109
+    },
+    "Brazil Best Sellers → Best Value -Salt & Pepper Mix - Chocolate & White": {
+      "categoria": "Brazil Best Sellers → Best Value -Salt & Pepper Mix - Chocolate & White",
+      "qbItem": "N/A",
+      "fotos": [
+        "28639"
+      ],
+      "quantidadeTotal": 1,
+      "valorTotal": 159
+    },
+    "Brazil Best Sellers → Best Value -Salt & Pepper Mix - Brown & White + Tricolor": {
+      "categoria": "Brazil Best Sellers → Best Value -Salt & Pepper Mix - Brown & White + Tricolor",
+      "qbItem": "N/A",
+      "fotos": [
+        "29170",
+        "29202"
+      ],
+      "quantidadeTotal": 2,
+      "valorTotal": 318
+    },
+    "Brazil Best Sellers → Dark Tones Mix ML-XL": {
+      "categoria": "Brazil Best Sellers → Dark Tones Mix ML-XL",
+      "qbItem": "N/A",
+      "fotos": [
+        "31462",
+        "31452",
+        "32344"
+      ],
+      "quantidadeTotal": 3,
+      "valorTotal": 297
+    },
+    "Colombian Cowhides → 1. Medium → Exotic M": {
+      "categoria": "Colombian Cowhides → 1. Medium → Exotic M",
+      "qbItem": "N/A",
+      "fotos": [
+        "35528",
+        "35529"
+      ],
+      "quantidadeTotal": 2,
+      "valorTotal": 190
+    },
+    "Colombian Cowhides → 3. X-Large → Exotic Tones XL": {
+      "categoria": "Colombian Cowhides → 3. X-Large → Exotic Tones XL",
+      "qbItem": "N/A",
+      "fotos": [
+        "36517",
+        "36520"
+      ],
+      "quantidadeTotal": 2,
+      "valorTotal": 210
+    },
+    "Colombian Cowhides → 2. Large → Brown & White": {
+      "categoria": "Colombian Cowhides → 2. Large → Brown & White",
+      "qbItem": "N/A",
+      "fotos": [
+        "35497"
+      ],
+      "quantidadeTotal": 1,
+      "valorTotal": 85
+    }
+  }
+}
