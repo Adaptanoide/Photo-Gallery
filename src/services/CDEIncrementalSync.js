@@ -1084,41 +1084,52 @@ class CDEIncrementalSync {
 
                     // LÓGICA: Se não está PRE-SELECTED para este cliente, há problema
                     let problema = null;
-                    let ghostReason = null;
 
                     if (estadoCDE === 'RETIRADO') {
                         problema = 'VENDIDA';
-                        ghostReason = 'This item has been sold';
                     } else if (estadoCDE === 'RESERVED' && !pertenceAoCliente) {
                         problema = 'RESERVADA POR OUTRO';
-                        ghostReason = 'This item was reserved by another customer';
                     } else if (estadoCDE === 'STANDBY') {
                         problema = 'EM STANDBY';
-                        ghostReason = 'This item is temporarily unavailable';
                     } else if (estadoCDE === 'CONFIRMED' && !pertenceAoCliente) {
                         problema = 'CONFIRMADA POR OUTRO';
-                        ghostReason = 'This item was confirmed by another customer';
                     } else if (estadoCDE === 'INGRESADO') {
                         // Foto está disponível no CDE mas deveria estar PRE-SELECTED
                         // Isso pode acontecer se alguém liberou manualmente
                         problema = 'LIBERADA NO CDE';
-                        ghostReason = 'This item is no longer reserved for you';
                     }
 
-                    if (problema && ghostReason) {
+                    if (problema) {
                         console.log(`[SYNC] ⚠️ Carrinho ${clientCode}: Foto ${photoNumber} - ${problema} (CDE: ${estadoCDE})`);
 
-                        // Marcar como ghost
-                        const CartService = require('../services/CartService');
-                        const marked = await CartService.markItemAsGhost(
-                            clientCode,
-                            fileName,
-                            ghostReason
+                        // REMOVER item do carrinho (ao invés de marcar como ghost)
+                        const removeResult = await Cart.findOneAndUpdate(
+                            { _id: carrinho._id },
+                            {
+                                $pull: { items: { fileName: fileName } },
+                                $set: { lastActivity: new Date() }
+                            },
+                            { new: true }
                         );
 
-                        if (marked) {
-                            console.log(`[SYNC] 👻 Foto ${photoNumber} marcada como ghost no carrinho de ${clientName}`);
-                            totalGhostsMarkados++;
+                        if (removeResult) {
+                            // Atualizar totalItems manualmente
+                            const validItems = removeResult.items.filter(i => !i.ghostStatus || i.ghostStatus !== 'ghost');
+                            await Cart.updateOne(
+                                { _id: carrinho._id },
+                                { $set: { totalItems: validItems.length } }
+                            );
+
+                            // Liberar reserva no MongoDB (se ainda existir)
+                            await UnifiedProductComplete.updateOne(
+                                { fileName: fileName },
+                                {
+                                    $unset: { reservedBy: 1 }
+                                }
+                            );
+
+                            console.log(`[SYNC] 🗑️ Foto ${photoNumber} REMOVIDA do carrinho de ${clientName}`);
+                            totalGhostsMarkados++; // Reutilizando como contador de removidos
                         }
 
                         problemasDesteCarrinho.push({
@@ -1127,7 +1138,7 @@ class CDEIncrementalSync {
                             problema,
                             estadoCDE,
                             reservedUsu: reservedUsu || '(vazio)',
-                            ghostMarked: marked
+                            removed: !!removeResult
                         });
                     }
                 }
@@ -1148,7 +1159,7 @@ class CDEIncrementalSync {
             console.log(`[SYNC] 📊 RESUMO DA VERIFICAÇÃO DE CARRINHOS:`);
             console.log(`   Carrinhos verificados: ${carrinhosAtivos.length}`);
             console.log(`   Total de problemas: ${totalProblemas}`);
-            console.log(`   Ghosts marcados: ${totalGhostsMarkados}`);
+            console.log(`   Itens removidos: ${totalGhostsMarkados}`);
 
             if (carrinhosComProblemas.length > 0) {
                 console.log(`[SYNC] ⚠️ CARRINHOS COM PROBLEMAS:`);
@@ -1164,13 +1175,13 @@ class CDEIncrementalSync {
             return {
                 verificados: carrinhosAtivos.length,
                 problemas: totalProblemas,
-                ghostsMarkados: totalGhostsMarkados,
+                itensRemovidos: totalGhostsMarkados,
                 carrinhosAfetados: carrinhosComProblemas
             };
 
         } catch (error) {
             console.error(`[SYNC] ❌ Erro ao verificar carrinhos:`, error.message);
-            return { verificados: 0, problemas: 0, ghostsMarkados: 0, erro: error.message };
+            return { verificados: 0, problemas: 0, itensRemovidos: 0, erro: error.message };
         }
     }
 
