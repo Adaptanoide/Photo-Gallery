@@ -1046,11 +1046,35 @@ class CDEIncrementalSync {
                 const clientCode = carrinho.clientCode;
                 const clientName = carrinho.clientName;
 
+                // PRIMEIRO: Remover todos os ghost items existentes
+                const ghostItems = carrinho.items.filter(item => item.ghostStatus === 'ghost');
+                if (ghostItems.length > 0) {
+                    console.log(`[SYNC] 🧹 Removendo ${ghostItems.length} ghost items existentes do carrinho de ${clientName}`);
+
+                    for (const ghostItem of ghostItems) {
+                        await Cart.findOneAndUpdate(
+                            { _id: carrinho._id },
+                            { $pull: { items: { fileName: ghostItem.fileName } } }
+                        );
+                        totalGhostsMarkados++;
+                        console.log(`[SYNC] 🗑️ Ghost ${ghostItem.fileName} removido`);
+                    }
+
+                    // Atualizar totalItems
+                    const updatedCart = await Cart.findById(carrinho._id);
+                    if (updatedCart) {
+                        await Cart.updateOne(
+                            { _id: carrinho._id },
+                            { $set: { totalItems: updatedCart.items.length } }
+                        );
+                    }
+                }
+
                 // Filtrar apenas fotos únicas (não produtos de catálogo)
                 const photoItems = carrinho.items.filter(item =>
                     !item.isCatalogProduct &&
                     item.fileName &&
-                    item.ghostStatus !== 'ghost' // Ignorar já marcados como ghost
+                    item.ghostStatus !== 'ghost'
                 );
 
                 if (photoItems.length === 0) continue;
