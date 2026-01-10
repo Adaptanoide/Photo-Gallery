@@ -27,12 +27,13 @@ class CartService {
 
     /**
      * Extrair número da foto
+     * ⚠️ NÃO usar padStart! Fotos como "1159" e "01159" são DIFERENTES no CDE
      */
     static extractPhotoNumber(fileName) {
         if (!fileName) return null;
         const cleaned = fileName.replace('.webp', '').replace('.jpg', '').replace('.png', '');
         const numbers = cleaned.match(/\d+/);
-        return numbers ? numbers[0].padStart(5, '0') : null;
+        return numbers ? numbers[0] : null; // Retorna sem padding para preservar o número original
     }
 
     static async addToCart(sessionId, clientCode, clientName, driveFileId, itemData = {}) {
@@ -65,9 +66,11 @@ class CartService {
                 const cdeConnection = await CartService.getCDEConnection();
 
                 try {
+                    // ⚠️ NÃO usar padStart! Fotos como "1159" e "01159" são DIFERENTES no CDE
+                    // Ex: 1159 (4 dígitos) pode estar INGRESADO, enquanto 01159 (5 dígitos) está RETIRADO
                     const [cdeRows] = await cdeConnection.execute(
                         'SELECT AESTADOP, RESERVEDUSU FROM tbinventario WHERE ATIPOETIQUETA = ?',
-                        [photoNumber.padStart(5, '0')]
+                        [photoNumber]
                     );
 
                     if (cdeRows.length === 0) {
@@ -78,6 +81,16 @@ class CartService {
                     const estadoCDE = cdeRows[0].AESTADOP;
                     if (estadoCDE === 'RETIRADO') {
                         await cdeConnection.end();
+                        // Atualizar MongoDB para refletir status vendido (próxima vez não aparece na galeria)
+                        try {
+                            await UnifiedProductComplete.updateOne(
+                                { photoNumber: photoNumber },
+                                { $set: { status: 'sold', cdeStatus: 'RETIRADO' } }
+                            );
+                            console.log(`[CART] 🔄 Foto ${photoNumber} marcada como sold no MongoDB (RETIRADO no CDE)`);
+                        } catch (updateErr) {
+                            console.error(`[CART] ⚠️ Erro ao atualizar status:`, updateErr.message);
+                        }
                         throw new Error(`Foto ${photoNumber} já foi vendida e não está mais disponível`);
                     }
 
@@ -131,9 +144,11 @@ class CartService {
                 const cdeConnection = await CartService.getCDEConnection();
 
                 try {
+                    // ⚠️ NÃO usar padStart! Fotos como "1159" e "01159" são DIFERENTES no CDE
+                    // Ex: 1159 (4 dígitos) pode estar INGRESADO, enquanto 01159 (5 dígitos) está RETIRADO
                     const [cdeRows] = await cdeConnection.execute(
                         'SELECT AESTADOP, RESERVEDUSU FROM tbinventario WHERE ATIPOETIQUETA = ?',
-                        [photoNumber.padStart(5, '0')]
+                        [photoNumber]
                     );
 
                     if (cdeRows.length === 0) {
@@ -146,6 +161,16 @@ class CartService {
 
                     if (estadoCDE === 'RETIRADO') {
                         await cdeConnection.end();
+                        // Atualizar MongoDB para refletir status vendido (próxima vez não aparece na galeria)
+                        try {
+                            await UnifiedProductComplete.updateOne(
+                                { photoNumber: photoNumber },
+                                { $set: { status: 'sold', cdeStatus: 'RETIRADO' } }
+                            );
+                            console.log(`[CART] 🔄 Foto ${photoNumber} marcada como sold no MongoDB (RETIRADO no CDE)`);
+                        } catch (updateErr) {
+                            console.error(`[CART] ⚠️ Erro ao atualizar status:`, updateErr.message);
+                        }
                         throw new Error(`Foto ${photoNumber} já foi vendida e não está mais disponível`);
                     }
 
@@ -386,13 +411,17 @@ class CartService {
 
             // Atualizar totalItems manualmente (findOneAndUpdate não dispara pre-save)
             const validItems = updateResult.items.filter(i => !i.ghostStatus || i.ghostStatus !== 'ghost');
+            const newTotalItems = validItems.length;
+
             await Cart.updateOne(
                 { _id: cart._id },
-                { $set: { totalItems: validItems.length } }
+                { $set: { totalItems: newTotalItems } }
             );
 
             cart = updateResult;
-            console.log(`[CART] Carrinho atualizado (atômico) - ${cart.items.length} items`);
+            // ✅ FIX: Atualizar totalItems no objeto retornado (evita valor stale)
+            cart.totalItems = newTotalItems;
+            console.log(`[CART] Carrinho atualizado (atômico) - ${cart.items.length} items, totalItems: ${newTotalItems}`);
 
             // 3. APENAS SE NÃO FOR GHOST: Liberar produto e atualizar CDE
             if (!isGhostItem) {

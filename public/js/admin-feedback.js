@@ -83,12 +83,18 @@ function renderFeedbackList(feedback) {
     const feedbackList = document.getElementById('feedbackList');
     if (!feedbackList) return;
 
+    // Detectar tema atual
+    const isLightTheme = document.body.classList.contains('admin-light-theme');
+    const emptyTextColor = isLightTheme ? '#6b7280' : '#c0c0c8';
+    const emptyIconColor = isLightTheme ? '#d1d5db' : '#6a6a72';
+    const emptySubColor = isLightTheme ? '#9ca3af' : '#a0a0a8';
+
     if (!feedback || feedback.length === 0) {
         feedbackList.innerHTML = `
-            <div class="empty-state" style="text-align: center; padding: 60px 20px; color: #6b7280;">
-                <i class="fas fa-inbox" style="font-size: 48px; color: #d1d5db; margin-bottom: 16px;"></i>
+            <div class="empty-state" style="text-align: center; padding: 60px 20px; color: ${emptyTextColor};">
+                <i class="fas fa-inbox" style="font-size: 48px; color: ${emptyIconColor}; margin-bottom: 16px;"></i>
                 <p style="font-size: 1.1rem; font-weight: 500;">No feedback found</p>
-                <p style="font-size: 0.9rem; color: #9ca3af;">Client feedback will appear here</p>
+                <p style="font-size: 0.9rem; color: ${emptySubColor};">Client feedback will appear here</p>
             </div>
         `;
         return;
@@ -99,12 +105,39 @@ function renderFeedbackList(feedback) {
 
 // Render single feedback card
 function renderFeedbackCard(fb) {
+    // Detectar tema atual
+    const isLightTheme = document.body.classList.contains('admin-light-theme');
+
+    // Cores adaptativas (dark = padrão, light = alternativo)
+    // Dark theme: cores mais claras e vibrantes para melhor legibilidade
+    const colors = {
+        cardBg: isLightTheme ? '#ffffff' : '#3a3a44',
+        cardBorder: isLightTheme ? '#e5e7eb' : '#4a4a54',
+        textPrimary: isLightTheme ? '#1f2937' : '#f0f0f0',
+        textSecondary: isLightTheme ? '#9ca3af' : '#b0b0b8',
+        textMuted: isLightTheme ? '#6b7280' : '#c0c0c8',
+        messageBg: isLightTheme ? '#f9fafb' : '#2a2a32',
+        messageBorder: isLightTheme ? '#e5e7eb' : '#4a4a54',
+        notesBg: isLightTheme ? '#fffbeb' : '#4a4030',
+        notesBorder: isLightTheme ? '#fde68a' : '#8a7a4a',
+        notesText: isLightTheme ? '#78350f' : '#f0d080',
+        notesLabel: isLightTheme ? '#92400e' : '#e0c060',
+        buttonBg: isLightTheme ? '#f3f4f6' : '#4a4a54',
+        buttonText: isLightTheme ? '#374151' : '#f0f0f0',
+        dividerColor: isLightTheme ? '#f3f4f6' : '#4a4a54'
+    };
+
     const typeIcons = {
         suggestion: { icon: 'lightbulb', color: '#10b981', label: 'Suggestion' },
         issue: { icon: 'exclamation-triangle', color: '#f59e0b', label: 'Issue' },
         question: { icon: 'question-circle', color: '#3b82f6', label: 'Question' },
         praise: { icon: 'star', color: '#8b5cf6', label: 'Praise' },
-        general: { icon: 'comment', color: '#6b7280', label: 'General' }
+        general: { icon: 'comment', color: '#6b7280', label: 'General' },
+        // Selection completion feedback types
+        variety: { icon: 'layer-group', color: '#06b6d4', label: 'Variety' },
+        quality: { icon: 'gem', color: '#ec4899', label: 'Quality' },
+        easy: { icon: 'hand-pointer', color: '#22c55e', label: 'Easy' },
+        found_it: { icon: 'search', color: '#f97316', label: 'Found it' }
     };
 
     const statusColors = {
@@ -126,8 +159,8 @@ function renderFeedbackCard(fb) {
 
     return `
         <div class="feedback-card" data-id="${fb._id}" style="
-            background: white;
-            border: 1px solid #e5e7eb;
+            background: ${colors.cardBg};
+            border: 1px solid ${colors.cardBorder};
             border-radius: 12px;
             padding: 20px;
             margin-bottom: 12px;
@@ -147,8 +180,8 @@ function renderFeedbackCard(fb) {
                         <i class="fas fa-${typeInfo.icon}" style="color: ${typeInfo.color}; font-size: 16px;"></i>
                     </div>
                     <div>
-                        <h4 style="margin: 0; font-size: 1rem; color: #1f2937; font-weight: 600;">${fb.clientName}</h4>
-                        <p style="margin: 2px 0 0; font-size: 0.8rem; color: #9ca3af;">${fb.clientCode || 'No code'} &bull; ${date}</p>
+                        <h4 style="margin: 0; font-size: 1rem; color: ${colors.textPrimary}; font-weight: 600;">${fb.clientName}</h4>
+                        <p style="margin: 2px 0 0; font-size: 0.8rem; color: ${colors.textSecondary};">${fb.clientCode || 'No code'} &bull; ${date}</p>
                     </div>
                 </div>
                 <div style="display: flex; gap: 8px; align-items: center;">
@@ -173,36 +206,37 @@ function renderFeedbackCard(fb) {
 
             ${fb.message ? `
                 <div style="
-                    background: #f9fafb;
+                    background: ${colors.messageBg};
+                    border: 1px solid ${colors.messageBorder};
                     border-radius: 8px;
                     padding: 14px;
                     margin-bottom: 12px;
                 ">
-                    <p style="margin: 0; font-size: 0.9rem; color: #374151; line-height: 1.5;">${fb.message}</p>
+                    <p style="margin: 0; font-size: 0.9rem; color: ${colors.textPrimary}; line-height: 1.5;">${fb.message}</p>
                 </div>
             ` : ''}
 
             ${fb.adminNotes ? `
                 <div style="
-                    background: #fffbeb;
-                    border: 1px solid #fde68a;
+                    background: ${colors.notesBg};
+                    border: 1px solid ${colors.notesBorder};
                     border-radius: 8px;
                     padding: 12px;
                     margin-bottom: 12px;
                 ">
-                    <p style="margin: 0 0 4px; font-size: 0.75rem; color: #92400e; font-weight: 600;">
+                    <p style="margin: 0 0 4px; font-size: 0.75rem; color: ${colors.notesLabel}; font-weight: 600;">
                         <i class="fas fa-sticky-note"></i> Admin Notes
                     </p>
-                    <p style="margin: 0; font-size: 0.85rem; color: #78350f;">${fb.adminNotes}</p>
+                    <p style="margin: 0; font-size: 0.85rem; color: ${colors.notesText};">${fb.adminNotes}</p>
                 </div>
             ` : ''}
 
-            <div style="display: flex; gap: 8px; padding-top: 8px; border-top: 1px solid #f3f4f6;">
+            <div style="display: flex; gap: 8px; padding-top: 8px; border-top: 1px solid ${colors.dividerColor};">
                 ${fb.status === 'new' ? `
                     <button onclick="updateFeedbackStatus('${fb._id}', 'read')" style="
                         padding: 6px 12px;
-                        background: #e0e7ff;
-                        color: #4338ca;
+                        background: #3b82f620;
+                        color: #3b82f6;
                         border: none;
                         border-radius: 6px;
                         cursor: pointer;
@@ -216,8 +250,8 @@ function renderFeedbackCard(fb) {
                 ${fb.status !== 'resolved' && fb.status !== 'archived' ? `
                     <button onclick="updateFeedbackStatus('${fb._id}', 'resolved')" style="
                         padding: 6px 12px;
-                        background: #dcfce7;
-                        color: #166534;
+                        background: #22c55e20;
+                        color: #22c55e;
                         border: none;
                         border-radius: 6px;
                         cursor: pointer;
@@ -230,8 +264,8 @@ function renderFeedbackCard(fb) {
                 ` : ''}
                 <button onclick="openNotesModal('${fb._id}', '${(fb.adminNotes || '').replace(/'/g, "\\'")}')" style="
                     padding: 6px 12px;
-                    background: #f3f4f6;
-                    color: #374151;
+                    background: ${colors.buttonBg};
+                    color: ${colors.buttonText};
                     border: none;
                     border-radius: 6px;
                     cursor: pointer;
@@ -244,8 +278,8 @@ function renderFeedbackCard(fb) {
                 ${fb.status !== 'archived' ? `
                     <button onclick="updateFeedbackStatus('${fb._id}', 'archived')" style="
                         padding: 6px 12px;
-                        background: #f3f4f6;
-                        color: #6b7280;
+                        background: ${colors.buttonBg};
+                        color: ${colors.textMuted};
                         border: none;
                         border-radius: 6px;
                         cursor: pointer;
@@ -299,6 +333,22 @@ async function updateFeedbackStatus(id, status) {
 
 // Open notes modal
 function openNotesModal(id, currentNotes) {
+    // Detectar tema atual
+    const isLightTheme = document.body.classList.contains('admin-light-theme');
+
+    const modalColors = {
+        backdrop: isLightTheme ? 'rgba(0, 0, 0, 0.5)' : 'rgba(0, 0, 0, 0.7)',
+        bg: isLightTheme ? '#ffffff' : '#3a3a44',
+        border: isLightTheme ? '#e5e7eb' : '#5a5a64',
+        text: isLightTheme ? '#1f2937' : '#f0f0f0',
+        inputBg: isLightTheme ? '#ffffff' : '#2a2a32',
+        inputBorder: isLightTheme ? '#e5e7eb' : '#5a5a64',
+        inputText: isLightTheme ? '#1f2937' : '#f0f0f0',
+        cancelBg: isLightTheme ? '#f3f4f6' : '#4a4a54',
+        cancelText: isLightTheme ? '#374151' : '#f0f0f0',
+        accentColor: isLightTheme ? '#B87333' : '#e0c050'
+    };
+
     const modalHTML = `
         <div id="notesModal" style="
             position: fixed;
@@ -306,39 +356,42 @@ function openNotesModal(id, currentNotes) {
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
+            background: ${modalColors.backdrop};
             z-index: 10000;
             display: flex;
             align-items: center;
             justify-content: center;
         ">
             <div style="
-                background: white;
+                background: ${modalColors.bg};
+                border: 1px solid ${modalColors.border};
                 border-radius: 12px;
                 padding: 24px;
                 width: 90%;
                 max-width: 450px;
-                box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+                box-shadow: 0 25px 50px rgba(0, 0, 0, 0.35);
             ">
-                <h3 style="margin: 0 0 16px; font-size: 1.1rem; color: #1f2937;">
-                    <i class="fas fa-sticky-note" style="color: #B87333;"></i> Admin Notes
+                <h3 style="margin: 0 0 16px; font-size: 1.1rem; color: ${modalColors.text};">
+                    <i class="fas fa-sticky-note" style="color: ${modalColors.accentColor};"></i> Admin Notes
                 </h3>
                 <textarea id="notesTextarea" style="
                     width: 100%;
                     min-height: 120px;
                     padding: 12px;
-                    border: 1px solid #e5e7eb;
+                    background: ${modalColors.inputBg};
+                    border: 1px solid ${modalColors.inputBorder};
                     border-radius: 8px;
                     font-size: 0.9rem;
                     font-family: inherit;
                     resize: vertical;
                     margin-bottom: 16px;
+                    color: ${modalColors.inputText};
                 " placeholder="Add notes about this feedback...">${currentNotes}</textarea>
                 <div style="display: flex; gap: 10px; justify-content: flex-end;">
                     <button onclick="closeNotesModal()" style="
                         padding: 10px 20px;
-                        background: #f3f4f6;
-                        color: #374151;
+                        background: ${modalColors.cancelBg};
+                        color: ${modalColors.cancelText};
                         border: none;
                         border-radius: 8px;
                         cursor: pointer;
@@ -346,8 +399,8 @@ function openNotesModal(id, currentNotes) {
                     ">Cancel</button>
                     <button onclick="saveNotes('${id}')" style="
                         padding: 10px 20px;
-                        background: linear-gradient(135deg, #B87333, #A0522D);
-                        color: white;
+                        background: linear-gradient(135deg, ${modalColors.accentColor}, ${isLightTheme ? '#A0522D' : '#b8941f'});
+                        color: ${isLightTheme ? 'white' : '#1a1a1a'};
                         border: none;
                         border-radius: 8px;
                         cursor: pointer;

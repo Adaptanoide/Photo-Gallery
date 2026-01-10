@@ -16,7 +16,12 @@ const feedbackSchema = new mongoose.Schema({
     // Feedback type
     type: {
         type: String,
-        enum: ['suggestion', 'issue', 'question', 'praise', 'general'],
+        enum: [
+            // Original types
+            'suggestion', 'issue', 'question', 'praise', 'general',
+            // Selection completion feedback types
+            'variety', 'quality', 'easy', 'found_it'
+        ],
         default: 'general'
     },
 

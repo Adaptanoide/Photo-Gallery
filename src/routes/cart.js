@@ -1411,10 +1411,32 @@ async function calculateCartTotals(cart) {
 
     // ⭐ IMPORTANTE: Salvar os preços atualizados de volta no carrinho
     // Isso garante que os preços calculados (tier pricing) sejam persistidos
+    // 🔧 FIX: Verificar lock de finalização E status no banco antes de salvar
     try {
         if (cart.save && typeof cart.save === 'function') {
-            await cart.save();
-            console.log(`💾 [CART] Preços atualizados salvos no carrinho`);
+            // 🔒 Verificar se carrinho está sendo finalizado (lock em memória)
+            let isBeingFinalized = false;
+            try {
+                const { isCartBeingFinalized } = require('./selection');
+                isBeingFinalized = isCartBeingFinalized(cart.sessionId);
+            } catch (e) {
+                // Ignorar erro de import circular
+            }
+
+            if (isBeingFinalized) {
+                console.log(`🔒 [CART] Carrinho ${cart.sessionId} está sendo finalizado - não salvando`);
+            } else {
+                // Verificar status atual no banco ANTES de salvar
+                const Cart = require('../models/Cart');
+                const currentCart = await Cart.findOne({ sessionId: cart.sessionId }).select('isActive').lean();
+
+                if (currentCart && currentCart.isActive !== false) {
+                    await cart.save();
+                    console.log(`💾 [CART] Preços atualizados salvos no carrinho`);
+                } else {
+                    console.log(`⏭️ [CART] Carrinho inativo no banco - não salvando preços`);
+                }
+            }
         }
     } catch (saveErr) {
         console.warn(`⚠️ [CART] Erro ao salvar preços atualizados:`, saveErr.message);

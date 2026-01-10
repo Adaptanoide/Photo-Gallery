@@ -2557,10 +2557,11 @@ function showConfirmationModal(validItems, ghostCount) {
                     </div>
 
                     <!-- Notes Section - Compact -->
-                    <div class="notes-section" style="background: ${isDarkMode ? '#333' : '#f8fafc'}; border: 2px solid #B87333; border-radius: 10px; padding: 14px;">
+                    <div class="notes-section" style="background: ${isDarkMode ? '#333' : '#f8fafc'}; border: 1px solid ${isDarkMode ? '#555' : '#e2e8f0'}; border-radius: 10px; padding: 14px;">
                         <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem; color: ${isDarkMode ? '#e0e0e0' : '#1f2937'};">
                             <i class="fas fa-edit" style="color: #B87333; font-size: 16px;"></i>
                             Additional Notes
+                            <span style="font-weight: 400; font-size: 0.8rem; color: ${isDarkMode ? '#888' : '#9ca3af'};">(optional)</span>
                         </label>
                         <p style="margin: 0 0 10px 0; font-size: 0.8rem; color: ${isDarkMode ? '#888' : '#6b7280'}; line-height: 1.5;">
                             Share your shipping address, delivery instructions, questions, or any special requests for your order.
@@ -2602,6 +2603,14 @@ function showConfirmationModal(validItems, ghostCount) {
     const modalDiv = document.createElement('div');
     modalDiv.innerHTML = modalHTML;
     document.body.appendChild(modalDiv);
+
+    // Auto-focus no textarea após um pequeno delay para a animação
+    setTimeout(() => {
+        const textarea = document.getElementById('clientObservations');
+        if (textarea) {
+            textarea.focus();
+        }
+    }, 100);
 }
 
 // Cancelar confirmação
@@ -2676,11 +2685,16 @@ window.proceedWithSelection = async function () {
     }
 }
 
-// Modal de sucesso - Clean Design
+// Modal de sucesso UNIFICADO com Feedback - Clean Design
 function showSuccessModalWithMessage(result) {
     const itemCount = result.selection.totalItems;
     const itemText = itemCount === 1 ? 'item' : 'items';
     const isDarkMode = document.body.classList.contains('dark-mode');
+
+    // Get client info for feedback
+    const session = JSON.parse(localStorage.getItem('sunshineSession') || '{}');
+    const clientName = session.user?.name || 'Client';
+    const clientCode = session.accessCode || '';
 
     // Dark mode colors
     const colors = isDarkMode ? {
@@ -2697,7 +2711,14 @@ function showSuccessModalWithMessage(result) {
         warnBg: '#3d3520',
         warnBorder: '#5c4d2a',
         warnTitle: '#fbbf24',
-        warnText: '#d4a94a'
+        warnText: '#d4a94a',
+        feedbackBg: '#333',
+        feedbackBorder: '#444',
+        btnBg: '#3d3d3d',
+        btnBorder: '#555',
+        btnHoverBg: '#4a4540',
+        textareaBg: '#2a2a2a',
+        textareaBorder: '#555'
     } : {
         modalBg: 'white',
         cardBg: '#fafafa',
@@ -2712,91 +2733,224 @@ function showSuccessModalWithMessage(result) {
         warnBg: '#fffbeb',
         warnBorder: '#fde68a',
         warnTitle: '#92400e',
-        warnText: '#78350f'
+        warnText: '#78350f',
+        feedbackBg: '#f8fafc',
+        feedbackBorder: '#e2e8f0',
+        btnBg: 'white',
+        btnBorder: '#e5e7eb',
+        btnHoverBg: '#faf7f5',
+        textareaBg: 'white',
+        textareaBorder: '#e5e7eb'
     };
 
     const modalHTML = `
         <style>
-            #successModal * { box-sizing: border-box; }
+            #successModalOverlay, #successModalOverlay * { box-sizing: border-box !important; }
             @keyframes successModalSlideIn {
                 from { opacity: 0; transform: scale(0.95) translateY(-10px); }
                 to { opacity: 1; transform: scale(1) translateY(0); }
             }
-            #successModal .info-card {
-                background: ${colors.cardBg}; border: 1px solid ${colors.cardBorder}; border-radius: 10px; padding: 14px 16px;
-                display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px;
+            #successModalOverlay {
+                position: fixed !important; top: 0 !important; left: 0 !important;
+                width: 100vw !important; height: 100vh !important;
+                background: rgba(0,0,0,0.6) !important; backdrop-filter: blur(4px) !important;
+                z-index: 999999 !important; display: flex !important;
+                align-items: center !important; justify-content: center !important;
+                padding: 20px !important; margin: 0 !important;
             }
-            #successModal .info-card i { color: #B87333; font-size: 16px; margin-top: 2px; flex-shrink: 0; }
-            #successModal .info-card strong { color: ${colors.strongColor}; font-size: 0.9rem; display: block; margin-bottom: 4px; }
-            #successModal .info-card p { margin: 0; color: ${colors.textColor}; font-size: 0.85rem; line-height: 1.5; }
+            #successModalOverlay .success-modal-box {
+                background: ${colors.modalBg} !important; border-radius: 16px !important;
+                max-width: 460px !important; width: 100% !important;
+                box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25) !important;
+                animation: successModalSlideIn 0.3s ease !important;
+                overflow: hidden !important; display: flex !important;
+                flex-direction: column !important; max-height: 90vh !important;
+            }
+            #successModalOverlay .success-modal-header {
+                padding: 16px 20px !important; display: flex !important;
+                align-items: center !important; gap: 12px !important;
+                border-bottom: 1px solid ${colors.headerBorder} !important;
+                flex-shrink: 0 !important;
+            }
+            #successModalOverlay .success-modal-body {
+                padding: 14px 20px !important; overflow-y: auto !important;
+                flex: 1 1 auto !important; display: block !important;
+            }
+            #successModalOverlay .success-info-card {
+                background: ${colors.cardBg} !important; border: 1px solid ${colors.cardBorder} !important;
+                border-radius: 10px !important; padding: 12px 14px !important;
+                display: flex !important; flex-direction: row !important;
+                align-items: flex-start !important; gap: 10px !important;
+                margin-bottom: 8px !important; width: 100% !important;
+            }
+            #successModalOverlay .success-info-card > i {
+                color: #B87333 !important; font-size: 14px !important;
+                margin-top: 2px !important; flex-shrink: 0 !important;
+            }
+            #successModalOverlay .success-info-card > div { flex: 1 !important; }
+            #successModalOverlay .success-info-card strong {
+                color: ${colors.strongColor} !important; font-size: 0.85rem !important;
+                display: block !important; margin-bottom: 2px !important;
+            }
+            #successModalOverlay .success-info-card p {
+                margin: 0 !important; color: ${colors.textColor} !important;
+                font-size: 0.8rem !important; line-height: 1.4 !important;
+            }
+            #successModalOverlay .success-feedback-section {
+                margin-top: 14px !important; padding: 14px !important;
+                background: ${colors.feedbackBg} !important;
+                border: 1px solid ${colors.feedbackBorder} !important;
+                border-radius: 10px !important; display: block !important;
+            }
+            #successModalOverlay .success-feedback-grid {
+                display: grid !important; grid-template-columns: repeat(4, 1fr) !important;
+                gap: 6px !important; margin-bottom: 10px !important;
+            }
+            #successModalOverlay .success-feedback-btn {
+                padding: 10px 8px !important; border: 2px solid ${colors.btnBorder} !important;
+                border-radius: 8px !important; background: ${colors.btnBg} !important;
+                cursor: pointer !important; text-align: center !important;
+                transition: all 0.2s ease !important; display: flex !important;
+                flex-direction: column !important; align-items: center !important; gap: 4px !important;
+            }
+            #successModalOverlay .success-feedback-btn:hover {
+                border-color: #B87333 !important; background: ${colors.btnHoverBg} !important;
+            }
+            #successModalOverlay .success-feedback-btn.selected {
+                border-color: #B87333 !important; background: ${colors.btnHoverBg} !important;
+            }
+            #successModalOverlay .success-feedback-btn i {
+                font-size: 16px !important; color: #9ca3af !important; transition: color 0.2s !important;
+            }
+            #successModalOverlay .success-feedback-btn.selected i { color: #B87333 !important; }
+            #successModalOverlay .success-feedback-btn span {
+                font-size: 0.7rem !important; color: ${colors.textColor} !important; font-weight: 500 !important;
+            }
+            #successModalOverlay .success-feedback-btn.selected span { color: #B87333 !important; }
+            #successModalOverlay .success-modal-footer {
+                padding: 14px 20px !important; background: ${colors.footerBg} !important;
+                border-top: 1px solid ${colors.footerBorder} !important;
+                flex-shrink: 0 !important;
+            }
+
+            /* Mobile optimizations */
+            @media (max-width: 480px) {
+                #successModalOverlay { padding: 12px !important; }
+                #successModalOverlay .success-modal-box { border-radius: 12px !important; max-height: 95vh !important; }
+                #successModalOverlay .success-modal-header { padding: 14px 16px !important; }
+                #successModalOverlay .success-modal-header h2 { font-size: 1rem !important; }
+                #successModalOverlay .success-modal-body { padding: 12px 16px !important; }
+                #successModalOverlay .success-info-card { padding: 10px 12px !important; margin-bottom: 6px !important; }
+                #successModalOverlay .success-info-card > i { font-size: 13px !important; }
+                #successModalOverlay .success-info-card strong { font-size: 0.8rem !important; }
+                #successModalOverlay .success-info-card p { font-size: 0.75rem !important; }
+                #successModalOverlay .success-feedback-section { padding: 12px !important; margin-top: 10px !important; }
+                #successModalOverlay .success-feedback-btn { padding: 8px 6px !important; }
+                #successModalOverlay .success-feedback-btn i { font-size: 14px !important; }
+                #successModalOverlay .success-feedback-btn span { font-size: 0.65rem !important; }
+                #successModalOverlay .success-feedback-textarea { min-height: 60px !important; font-size: 0.85rem !important; }
+                #successModalOverlay .success-modal-footer { padding: 12px 16px !important; }
+                #successModalOverlay .success-modal-footer button { padding: 11px 20px !important; font-size: 0.9rem !important; }
+            }
         </style>
-        <div id="successModal" style="
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 99999;
-            display: flex; align-items: center; justify-content: center; padding: 20px;
-        ">
-            <div style="
-                background: ${colors.modalBg}; border-radius: 16px; max-width: 440px; width: 100%;
-                box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25); animation: successModalSlideIn 0.3s ease;
-                overflow: hidden; display: flex; flex-direction: column; max-height: 90vh;
-            ">
-                <!-- Header - Simple with small icon -->
-                <div style="padding: 20px 24px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid ${colors.headerBorder};">
-                    <div style="
-                        width: 42px; height: 42px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-                        border-radius: 10px; display: flex; align-items: center; justify-content: center;
-                        box-shadow: 0 4px 12px rgba(34, 197, 94, 0.25);
-                    ">
-                        <i class="fas fa-check" style="color: white; font-size: 18px;"></i>
+        <div id="successModalOverlay">
+            <div class="success-modal-box">
+                <!-- Header -->
+                <div class="success-modal-header">
+                    <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.25); flex-shrink: 0;">
+                        <i class="fas fa-check" style="color: white; font-size: 16px;"></i>
                     </div>
                     <div>
-                        <h2 style="margin: 0; font-size: 1.1rem; font-weight: 600; color: ${colors.titleColor};">Selection Confirmed</h2>
-                        <p style="margin: 2px 0 0; color: ${colors.subtitleColor}; font-size: 0.85rem;">
+                        <h2 style="margin: 0; font-size: 1.05rem; font-weight: 600; color: ${colors.titleColor};">Selection Confirmed</h2>
+                        <p style="margin: 2px 0 0; color: ${colors.subtitleColor}; font-size: 0.8rem;">
                             <strong style="color: #22c55e;">${itemCount}</strong> ${itemText} reserved for you
                         </p>
                     </div>
                 </div>
 
                 <!-- Body -->
-                <div style="padding: 18px 24px; overflow-y: auto; flex: 1;">
+                <div class="success-modal-body">
                     <!-- What's Next -->
-                    <div class="info-card">
+                    <div class="success-info-card">
                         <i class="fas fa-phone-alt"></i>
                         <div>
                             <strong>What happens now?</strong>
-                            <p>Our sales team will contact you within <strong style="color: #B87333;">24-48 hours</strong> to discuss shipping options, payment methods, and finalize your order.</p>
+                            <p>Our team will contact you within <strong style="color: #B87333;">24-48 hours</strong> to discuss shipping, payment, and finalize your order.</p>
                         </div>
                     </div>
 
                     <!-- Items Reserved -->
-                    <div class="info-card">
+                    <div class="success-info-card">
                         <i class="fas fa-bookmark"></i>
                         <div>
                             <strong>Your items are reserved</strong>
-                            <p>The ${itemText} you selected ${itemCount === 1 ? 'is' : 'are'} now on hold and won't be available to other clients until we complete your order.</p>
+                            <p>The ${itemText} you selected ${itemCount === 1 ? 'is' : 'are'} now on hold for you.</p>
                         </div>
                     </div>
 
                     <!-- Gallery Note -->
-                    <div class="info-card" style="background: ${colors.warnBg}; border-color: ${colors.warnBorder};">
-                        <i class="fas fa-info-circle" style="color: #d97706;"></i>
+                    <div class="success-info-card" style="background: ${colors.warnBg} !important; border-color: ${colors.warnBorder} !important;">
+                        <i class="fas fa-info-circle" style="color: #d97706 !important;"></i>
                         <div>
-                            <strong style="color: ${colors.warnTitle};">Gallery access</strong>
-                            <p style="color: ${colors.warnText};">Your gallery will be temporarily paused. Your sales representative will reactivate it after confirming your order details.</p>
+                            <strong style="color: ${colors.warnTitle} !important;">Gallery access</strong>
+                            <p style="color: ${colors.warnText} !important;">Your gallery will be temporarily paused until your order is confirmed.</p>
                         </div>
+                    </div>
+
+                    <!-- Feedback Section -->
+                    <div class="success-feedback-section">
+                        <p style="margin: 0 0 10px; font-size: 0.8rem; color: ${colors.textColor}; display: flex; align-items: center; gap: 6px;">
+                            <i class="fas fa-comment-dots" style="color: #B87333;"></i>
+                            <strong style="color: ${colors.strongColor};">Quick Feedback</strong>
+                            <span style="color: ${colors.subtitleColor};">(optional)</span>
+                        </p>
+
+                        <!-- Feedback Buttons Grid -->
+                        <div class="success-feedback-grid">
+                            <button class="success-feedback-btn" data-type="variety" onclick="selectUnifiedFeedback(this)">
+                                <i class="fas fa-th-large"></i>
+                                <span>Variety</span>
+                            </button>
+                            <button class="success-feedback-btn" data-type="quality" onclick="selectUnifiedFeedback(this)">
+                                <i class="fas fa-gem"></i>
+                                <span>Quality</span>
+                            </button>
+                            <button class="success-feedback-btn" data-type="easy" onclick="selectUnifiedFeedback(this)">
+                                <i class="fas fa-hand-pointer"></i>
+                                <span>Easy</span>
+                            </button>
+                            <button class="success-feedback-btn" data-type="found_it" onclick="selectUnifiedFeedback(this)">
+                                <i class="fas fa-search"></i>
+                                <span>Found it</span>
+                            </button>
+                        </div>
+
+                        <!-- Comments textarea -->
+                        <textarea id="unifiedFeedbackMessage" class="success-feedback-textarea" style="
+                            width: 100% !important; padding: 10px 12px !important;
+                            border: 1px solid ${colors.textareaBorder} !important; border-radius: 8px !important;
+                            resize: none !important; font-size: 0.85rem !important; font-family: inherit !important;
+                            min-height: 70px !important; transition: border-color 0.2s, box-shadow 0.2s !important;
+                            background: ${colors.textareaBg} !important; color: ${colors.titleColor} !important;
+                            line-height: 1.4 !important; display: block !important;
+                        " placeholder="Any comments or suggestions? (optional)"
+                        onfocus="this.style.borderColor='#B87333'; this.style.boxShadow='0 0 0 3px rgba(184,115,51,0.1)';"
+                        onblur="this.style.borderColor='${colors.textareaBorder}'; this.style.boxShadow='none';"></textarea>
                     </div>
                 </div>
 
                 <!-- Footer -->
-                <div style="padding: 16px 24px; background: ${colors.footerBg}; border-top: 1px solid ${colors.footerBorder};">
-                    <button onclick="showFeedbackModal()" style="
-                        padding: 12px 24px; background: linear-gradient(135deg, #B87333, #A0522D); color: white;
-                        border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.95rem;
-                        display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%;
-                        box-shadow: 0 4px 12px rgba(184, 115, 51, 0.3); transition: all 0.2s;
+                <div class="success-modal-footer">
+                    <button onclick="submitUnifiedFeedbackAndClose('${clientName}', '${clientCode}')" style="
+                        padding: 12px 24px !important; background: linear-gradient(135deg, #B87333, #A0522D) !important;
+                        color: white !important; border: none !important; border-radius: 8px !important;
+                        cursor: pointer !important; font-weight: 600 !important; font-size: 0.95rem !important;
+                        display: flex !important; align-items: center !important; justify-content: center !important;
+                        gap: 10px !important; width: 100% !important;
+                        box-shadow: 0 4px 12px rgba(184, 115, 51, 0.3) !important; transition: all 0.2s !important;
                     " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 16px rgba(184, 115, 51, 0.4)';"
                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(184, 115, 51, 0.3)';">
-                        <i class="fas fa-home"></i> Return to Home
+                        <i class="fas fa-home"></i> Done
                     </button>
                 </div>
             </div>
@@ -2805,6 +2959,56 @@ function showSuccessModalWithMessage(result) {
 
     document.body.insertAdjacentHTML('beforeend', modalHTML);
 }
+
+// Unified feedback selection
+let unifiedSelectedFeedback = null;
+
+function selectUnifiedFeedback(btn) {
+    // Toggle selection
+    if (btn.classList.contains('selected')) {
+        btn.classList.remove('selected');
+        unifiedSelectedFeedback = null;
+    } else {
+        // Remove selected from all
+        document.querySelectorAll('#successModalOverlay .success-feedback-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        unifiedSelectedFeedback = btn.dataset.type;
+    }
+}
+window.selectUnifiedFeedback = selectUnifiedFeedback;
+
+// Submit feedback and close modal
+async function submitUnifiedFeedbackAndClose(clientName, clientCode) {
+    const message = document.getElementById('unifiedFeedbackMessage')?.value?.trim() || '';
+    const type = unifiedSelectedFeedback;
+
+    // Send feedback if any was provided
+    if (type || message) {
+        try {
+            await fetch('/api/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    clientName,
+                    clientCode,
+                    type: type || 'general',
+                    message,
+                    page: 'selection-complete'
+                })
+            });
+            console.log('✅ Feedback enviado');
+        } catch (e) {
+            console.log('Feedback not saved, continuing anyway');
+        }
+    }
+
+    // Reset state
+    unifiedSelectedFeedback = null;
+
+    // Redirect home
+    location.href = '/';
+}
+window.submitUnifiedFeedbackAndClose = submitUnifiedFeedbackAndClose;
 
 // ============================================
 // FEEDBACK MODAL SYSTEM

@@ -14,6 +14,12 @@ const PricingService = require('../services/PricingService');
 const { calculateCartTotals } = require('./cart');
 const router = express.Router();
 
+// 🔒 Lock para carrinhos sendo finalizados (evita race condition com auto-sync do frontend)
+const finalizingCarts = new Set();
+
+// Exportar para uso em cart.js
+module.exports.isCartBeingFinalized = (sessionId) => finalizingCarts.has(sessionId);
+
 /**
  * POST /api/selection/finalize
  * Finalizar seleção do cliente - mover fotos para RESERVED + enviar email
@@ -23,6 +29,9 @@ router.post('/finalize', async (req, res) => {
 
     console.log(`🎯 Iniciando finalização de seleção para cliente: ${clientName} (${clientCode})`);
     console.log(`📋 SessionId recebido: ${sessionId}`);
+
+    // 🔒 Adicionar lock para evitar que auto-sync do frontend salve o carrinho durante finalização
+    let cartSessionIdForLock = sessionId;
 
     // ========== BUSCAR CARRINHO FORA DA TRANSAÇÃO PRIMEIRO ==========
     // Isso evita problemas de read concern dentro de transações
@@ -64,6 +73,12 @@ router.post('/finalize', async (req, res) => {
     }
 
     console.log(`📦 Carrinho encontrado: ${cart.totalItems} itens (sessionId: ${cart.sessionId})`);
+
+    // 🔒 ADICIONAR LOCK IMEDIATAMENTE após encontrar o carrinho
+    // Isso evita race condition com auto-sync do frontend que chama calculateCartTotals
+    cartSessionIdForLock = cart.sessionId;
+    finalizingCarts.add(cartSessionIdForLock);
+    console.log(`🔒 Lock adicionado para carrinho ${cartSessionIdForLock} (antes da validação)`);
 
     // ========== ✅ VALIDAÇÃO CRÍTICA: Verificar fotos ANTES da transação ==========
     const photoItems = cart.items.filter(item =>
@@ -119,9 +134,10 @@ router.post('/finalize', async (req, res) => {
                 }
 
                 // 2. Verificar CDE
+                // ⚠️ NÃO usar padStart! Fotos como "1159" e "01159" são DIFERENTES no CDE
                 const [rows] = await cdeConnection.execute(
                     'SELECT AESTADOP, RESERVEDUSU FROM tbinventario WHERE ATIPOETIQUETA = ?',
-                    [photoNumber.padStart(5, '0')]
+                    [photoNumber]
                 );
 
                 if (rows.length === 0) {
@@ -179,6 +195,12 @@ router.post('/finalize', async (req, res) => {
             validationErrors.forEach(err => {
                 console.error(`   - ${err.photoNumber || err.fileName}: ${err.error}`);
             });
+
+            // 🔓 REMOVER LOCK antes de retornar erro
+            if (cartSessionIdForLock) {
+                finalizingCarts.delete(cartSessionIdForLock);
+                console.log(`🔓 Lock removido para carrinho ${cartSessionIdForLock} (validação falhou)`);
+            }
 
             return res.status(400).json({
                 success: false,
@@ -594,9 +616,34 @@ router.post('/finalize', async (req, res) => {
 
             console.log(`✅ Seleção normal salva no MongoDB: ${selectionId}`);
 
-            // ===== DESATIVAR CLIENTE APÓS SELEÇÃO =====
-            console.log('🔒 Desativando cliente após finalizar seleção...');
+            // ===== DESATIVAR CARRINHO E CLIENTE APÓS SELEÇÃO =====
+            console.log('🔒 Desativando carrinho e cliente após finalizar seleção...');
 
+            // 🔧 FIX: DELETAR carrinho DENTRO da transação para evitar race condition
+            // O frontend pode fazer requisições em paralelo que "revivem" o carrinho
+            // Deletar dentro da transação garante atomicidade
+            try {
+                const deleteResult = await Cart.deleteOne({ sessionId: sessionId }).session(session);
+                if (deleteResult.deletedCount > 0) {
+                    console.log(`🗑️ Carrinho ${sessionId} DELETADO dentro da transação`);
+                } else {
+                    console.log(`⚠️ Carrinho ${sessionId} não encontrado para deletar`);
+                }
+            } catch (cartError) {
+                console.error('⚠️ Erro ao deletar carrinho:', cartError.message);
+                // Fallback: tentar apenas marcar como inativo
+                try {
+                    await Cart.updateOne(
+                        { sessionId: sessionId },
+                        { $set: { isActive: false } }
+                    ).session(session);
+                    console.log(`🔒 Carrinho ${sessionId} marcado como inativo (fallback)`);
+                } catch (fallbackError) {
+                    console.error('⚠️ Erro no fallback:', fallbackError.message);
+                }
+            }
+
+            // Desativar cliente (separado do carrinho)
             try {
                 const updatedAccessCode = await AccessCode.findOneAndUpdate(
                     { code: clientCode },
@@ -613,16 +660,9 @@ router.post('/finalize', async (req, res) => {
 
                 if (updatedAccessCode) {
                     console.log(`🔒 Cliente ${clientCode} DESATIVADO após seleção`);
-
-                    // Marcar carrinho como inativo (dentro da transação)
-                    // Delete será feito DEPOIS da transação para evitar write conflict
-                    await Cart.updateOne(
-                        { sessionId: sessionId },
-                        { $set: { isActive: false } }
-                    ).session(session);
-                    console.log(`🔒 Carrinho ${sessionId} marcado como inativo`);
-
                     console.log(`   ➡️ Cliente precisa contatar vendedor para novo acesso`);
+                } else {
+                    console.log(`⚠️ Cliente ${clientCode} não encontrado para desativar`);
                 }
 
             } catch (desactivateError) {
@@ -803,15 +843,8 @@ router.post('/finalize', async (req, res) => {
             });
         });
 
-        // ========== DELETAR CARRINHO APÓS TRANSAÇÃO ==========
-        // Fazer FORA da transação para evitar write conflicts com sync
-        try {
-            await Cart.deleteOne({ sessionId: sessionId });
-            console.log(`🗑️ Carrinho ${sessionId} deletado após criar seleção`);
-        } catch (deleteError) {
-            console.error('⚠️ Erro ao deletar carrinho (não crítico):', deleteError.message);
-            // Não é crítico - carrinho já está inativo, seleção já foi criada
-        }
+        // ========== CARRINHO JÁ FOI DELETADO DENTRO DA TRANSAÇÃO ==========
+        // Não precisa deletar novamente - foi feito atomicamente dentro da transação
 
     } catch (error) {
         console.error('❌ Erro ao finalizar seleção:', error);
@@ -824,6 +857,11 @@ router.post('/finalize', async (req, res) => {
         });
     } finally {
         await session.endSession();
+        // 🔓 REMOVER LOCK após finalização (sucesso ou erro)
+        if (cartSessionIdForLock) {
+            finalizingCarts.delete(cartSessionIdForLock);
+            console.log(`🔓 Lock removido para carrinho ${cartSessionIdForLock}`);
+        }
     }
 });
 
