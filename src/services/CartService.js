@@ -62,8 +62,7 @@ class CartService {
             if (!product) {
                 // ✅ NOVA VALIDAÇÃO: Verificar no CDE antes de criar produto temporário
                 // Não criar produto se foto não existe ou está RETIRADO
-                const { getCDEConnection } = require('../config/cde-database');
-                const cdeConnection = await getCDEConnection();
+                const cdeConnection = await CartService.getCDEConnection();
 
                 try {
                     const [cdeRows] = await cdeConnection.execute(
@@ -129,8 +128,7 @@ class CartService {
 
             // 2b. Verificar CDE (se não for Coming Soon)
             if (!isComingSoon && photoNumber && photoNumber !== 'unknown') {
-                const { getCDEConnection } = require('../config/cde-database');
-                const cdeConnection = await getCDEConnection();
+                const cdeConnection = await CartService.getCDEConnection();
 
                 try {
                     const [cdeRows] = await cdeConnection.execute(

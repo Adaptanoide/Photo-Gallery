@@ -4,6 +4,7 @@
 
 const express = require('express');
 const mongoose = require('mongoose');
+const mysql = require('mysql2/promise');
 const Cart = require('../models/Cart');
 const Selection = require('../models/Selection');
 const UnifiedProductComplete = require('../models/UnifiedProductComplete');
@@ -73,8 +74,13 @@ router.post('/finalize', async (req, res) => {
         console.log(`🔍 [FINALIZE] Validando ${photoItems.length} fotos antes de criar seleção...`);
 
         const validationErrors = [];
-        const { getCDEConnection } = require('../config/cde-database');
-        const cdeConnection = await getCDEConnection();
+        const cdeConnection = await mysql.createConnection({
+            host: process.env.CDE_HOST,
+            port: process.env.CDE_PORT,
+            user: process.env.CDE_USER,
+            password: process.env.CDE_PASSWORD,
+            database: process.env.CDE_DATABASE
+        });
 
         try {
             for (const item of photoItems) {

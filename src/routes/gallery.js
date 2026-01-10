@@ -147,13 +147,29 @@ async function enrichFoldersWithAvailableCounts(folders, prefix = '') {
 
                 if (category) {
                     // ✅ CONTAR usando o displayName da categoria encontrada
-                    availableCount = await UnifiedProductComplete.countDocuments({
+                    const query = {
                         category: category.displayName,
                         status: 'available',
                         transitStatus: { $ne: 'coming_soon' },
                         cdeTable: { $ne: 'tbetiqueta' },
                         isActive: true
-                    });
+                    };
+
+                    // 🔍 DEBUG: Mostrar query completa
+                    if (folder.name.includes('Black & White L')) {
+                        console.log(`[DEBUG BLACK & WHITE L] Query:`, JSON.stringify(query, null, 2));
+                    }
+
+                    availableCount = await UnifiedProductComplete.countDocuments(query);
+
+                    // 🔍 DEBUG: Mostrar resultado detalhado
+                    if (folder.name.includes('Black & White L')) {
+                        console.log(`[DEBUG BLACK & WHITE L] Resultado: ${availableCount} fotos`);
+
+                        // Buscar uma foto de exemplo para ver seus campos
+                        const samplePhoto = await UnifiedProductComplete.findOne(query).select('photoNumber fileName category status isActive transitStatus cdeTable');
+                        console.log(`[DEBUG BLACK & WHITE L] Foto de exemplo:`, samplePhoto ? JSON.stringify(samplePhoto, null, 2) : 'NENHUMA ENCONTRADA');
+                    }
 
                     console.log(`[ENRICH] ${folder.name}: ✅ Encontrado! ${availableCount} fotos available (qbItem: ${category.qbItem}, price: $${category.basePrice})`);
                 } else {
@@ -1064,5 +1080,47 @@ router.get('/transit/photos', verifyClientToken, async (req, res) => {
 // ============================================
 // FIM DAS ROTAS DE COMING SOON
 // ============================================
+
+// ============================================
+// ENDPOINT PARA LIMPAR CACHE (ADMIN/DEBUG)
+// ============================================
+router.post('/clear-cache', async (req, res) => {
+    try {
+        const { clientCode } = req.body;
+
+        if (clientCode) {
+            // Limpar cache de um cliente específico
+            let cleared = 0;
+            for (const key of structureCache.keys()) {
+                if (key.startsWith(`${clientCode}:`)) {
+                    structureCache.delete(key);
+                    cleared++;
+                }
+            }
+            console.log(`🗑️ Cache limpo para cliente ${clientCode}: ${cleared} entradas removidas`);
+            return res.json({
+                success: true,
+                message: `Cache limpo para cliente ${clientCode}`,
+                cleared
+            });
+        } else {
+            // Limpar TODO o cache
+            const size = structureCache.size;
+            structureCache.clear();
+            console.log(`🗑️ TODO o cache foi limpo: ${size} entradas removidas`);
+            return res.json({
+                success: true,
+                message: 'Todo o cache foi limpo',
+                cleared: size
+            });
+        }
+    } catch (error) {
+        console.error('❌ Erro ao limpar cache:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
 
 module.exports = router;

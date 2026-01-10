@@ -2176,7 +2176,14 @@ router.delete('/cart/:clientCode', authenticateToken, async (req, res) => {
         // 3. Liberar fotos no CDE (marcar como INGRESADO)
         if (photoItems.length > 0) {
             const CDEWriter = require('../services/CDEWriter');
-            const cdeConnection = await require('../config/cde-database').getCDEConnection();
+            const mysql = require('mysql2/promise');
+            const cdeConnection = await mysql.createConnection({
+                host: process.env.CDE_HOST,
+                port: process.env.CDE_PORT,
+                user: process.env.CDE_USER,
+                password: process.env.CDE_PASSWORD,
+                database: process.env.CDE_DATABASE
+            });
 
             for (const item of photoItems) {
                 const photoNumber = item.fileName.match(/(\d+)/)?.[0];
