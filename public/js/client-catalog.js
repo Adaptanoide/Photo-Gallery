@@ -17,7 +17,10 @@ const THUMBNAIL_CONFIG = {
     r2BaseUrl: 'https://images.sunshinecowhides-gallery.com/catalog-thumbnails',
 
     // URL base local
-    localBaseUrl: '/images/thumbnailsCards'
+    localBaseUrl: '/images/thumbnailsCards',
+
+    // Cache version - increment to force reload of thumbnails
+    cacheVersion: '20260110'
 };
 
 /**
@@ -133,8 +136,8 @@ function getThumbnailUrl(imageName) {
     const fileName = imageName.endsWith('.png') ? imageName : `${imageName}.png`;
 
     if (THUMBNAIL_CONFIG.isProduction()) {
-        // Em produção: URL do R2 com encoding
-        return `${THUMBNAIL_CONFIG.r2BaseUrl}/${encodeURIComponent(fileName)}`;
+        // Em produção: URL do R2 com encoding e cache version
+        return `${THUMBNAIL_CONFIG.r2BaseUrl}/${encodeURIComponent(fileName)}?v=${THUMBNAIL_CONFIG.cacheVersion}`;
     } else {
         // Em desenvolvimento: URL local
         return `${THUMBNAIL_CONFIG.localBaseUrl}/${fileName}`;
@@ -152,7 +155,8 @@ function processCategoryThumbnail(localPath) {
     if (THUMBNAIL_CONFIG.isProduction()) {
         // Extrair nome do arquivo do path local
         const fileName = localPath.split('/').pop();
-        return `${THUMBNAIL_CONFIG.r2BaseUrl}/${encodeURIComponent(fileName)}`;
+        // Adicionar cache version para forçar reload
+        return `${THUMBNAIL_CONFIG.r2BaseUrl}/${encodeURIComponent(fileName)}?v=${THUMBNAIL_CONFIG.cacheVersion}`;
     }
 
     // Em dev, retorna o path local original
